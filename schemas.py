@@ -54,3 +54,22 @@ class SummaryResponse(BaseModel):
     total_income: float
     total_expenses: float
     net_profit: float
+
+class ReportSummaryResponse(BaseModel):
+    total_gross: float
+    total_deductions: float
+    total_net: float
+    total_weight: float
+
+class CropHistoryItem(BaseModel):
+    invoice_date: date
+    box_count: int
+    net_weight: float
+    unit_price: float
+    subtotal: float
+
+class CropHistoryResponse(BaseModel):
+    crop_name: str
+    history: List[CropHistoryItem]
+    total_weight: float
+    total_revenue: float
