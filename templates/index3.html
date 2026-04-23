@@ -13,9 +13,7 @@
         tailwind.config = {
             theme: {
                 extend: {
-                    colors: {
-                        agri: { light: '#eefcf1', base: '#22c55e', dark: '#166534' }
-                    },
+                    colors: { agri: { light: '#eefcf1', base: '#22c55e', dark: '#166534' } },
                     fontFamily: { sans: ['Tajawal', 'sans-serif'] }
                 }
             }
@@ -181,7 +179,7 @@
                     <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                 </div>
                 <h3 class="text-2xl font-black text-red-600 mb-2">منطقة تصفير الموسم</h3>
-                <p class="text-slate-500 mb-8">تحذير: سيقوم هذا الإجراء بمسح كافة البيانات بشكل نهائي.</p>
+                <p class="text-slate-500 mb-8">تحذير: سيقوم هذا الإجراء بمسح كافة البيانات من قاعدة البيانات السحابية بشكل نهائي.</p>
                 <button onclick="resetDatabase()" class="bg-red-600 hover:bg-red-800 text-white font-black py-4 px-10 rounded-2xl shadow-xl transition-all hover:scale-105">تصفير كافة السجلات</button>
             </div>
         </div>
@@ -196,7 +194,7 @@
                 <div class="bg-slate-50 p-4 rounded-2xl border"><p class="text-xs font-bold text-slate-400 uppercase">الربح الصافي</p><p id="modalRev" class="text-2xl font-black text-agri-dark">0</p></div>
                 <div class="bg-slate-50 p-4 rounded-2xl border"><p class="text-xs font-bold text-slate-400 uppercase">الأوزان</p><p id="modalWeight" class="text-2xl font-black text-slate-800">0 كغ</p></div>
                 <div class="flex items-end">
-                    <select id="modalYearFilter" class="w-full border rounded-xl p-3 font-bold bg-white focus:ring-2 focus:ring-agri-base outline-none">
+                    <select id="modalYearFilter" class="w-full border rounded-xl p-3 font-bold bg-white focus:ring-2 focus:ring-agri-base outline-none" onchange="triggerModalUpdate()">
                         <option value="2026">2026</option><option value="2025">2025</option>
                     </select>
                 </div>
@@ -214,19 +212,15 @@
 
     <script>
         // ==========================================
-        // DATABASE MOCK (LOCAL STORAGE SYSTEM)
+        // API CONFIGURATION (الربط مع Railway)
         // ==========================================
-        const DB_INVOICES = 'doumitt_invoices';
-        const DB_EXPENSES = 'doumitt_expenses';
-
-        function getInvoices() { return JSON.parse(localStorage.getItem(DB_INVOICES)) || []; }
-        function getExpenses() { return JSON.parse(localStorage.getItem(DB_EXPENSES)) || []; }
-        function saveInvoices(data) { localStorage.setItem(DB_INVOICES, JSON.stringify(data)); }
-        function saveExpenses(data) { localStorage.setItem(DB_EXPENSES, JSON.stringify(data)); }
+        // غير هذا الرابط إلى رابط Railway الخاص بك بمجرد رفعه!
+        const API_BASE = 'postgresql://postgres:hQPSFjXuzHTlTUzaVfcKFnHjGQoAhkTi@monorail.proxy.rlwy.net:46808/railway';
 
         let globalCrops = [];
         let itemIndex = 0;
         let draftInvoices = [];
+        let currentModalCrop = '';
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('inv_date').valueAsDate = new Date();
@@ -236,20 +230,20 @@
             setupDragAndDrop();
         });
 
-        // --- DASHBOARD ---
-        function loadAllData() {
-            const invs = getInvoices();
-            const exps = getExpenses();
+        // --- DASHBOARD (FETCH FROM API) ---
+        async function loadAllData() {
+            try {
+                const res = await fetch(`${API_BASE}/summary`);
+                const data = await res.json();
+                document.getElementById('total_income').innerText = data.total_income.toLocaleString();
+                document.getElementById('total_expenses').innerText = data.total_expenses.toLocaleString();
+                document.getElementById('net_profit').innerText = data.net_profit.toLocaleString();
 
-            const total_income = invs.reduce((sum, i) => sum + i.net_total, 0);
-            const total_expenses = exps.reduce((sum, e) => sum + e.amount, 0);
-            const net_profit = total_income - total_expenses;
-
-            document.getElementById('total_income').innerText = total_income.toLocaleString();
-            document.getElementById('total_expenses').innerText = total_expenses.toLocaleString();
-            document.getElementById('net_profit').innerText = net_profit.toLocaleString();
-
-            populateCropFilters(invs);
+                await populateCropFilters();
+            } catch (err) {
+                console.error("Error connecting to API", err);
+                document.getElementById('total_income').innerText = "خطأ اتصال";
+            }
         }
 
         function switchTab(tabId) {
@@ -261,7 +255,7 @@
             if (tabId === 'reports') { fetchReportSummary(); renderCropCardsGrid(); }
         }
 
-        // --- MANUAL FORMS ---
+        // --- MANUAL FORMS (POST TO API) ---
         function addInvoiceItemRow() {
             const idx = itemIndex++, container = document.getElementById('itemsContainer');
             const row = document.createElement('div');
@@ -286,8 +280,7 @@
 
         document.getElementById('inv_deductions').addEventListener('input', calcInv);
 
-        // SAVE INVOICE LOCALLY
-        document.getElementById('invoiceForm').addEventListener('submit', (e) => {
+        document.getElementById('invoiceForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const calc = calcInv();
             const items = Array.from(document.querySelectorAll('.items-row')).map(row => ({
@@ -299,8 +292,6 @@
             }));
 
             const payload = {
-                id: Date.now(),
-                invoice_ref: `MANUAL-${Date.now().toString().slice(-4)}`,
                 date: document.getElementById('inv_date').value,
                 total_gross: calc.totalGross,
                 deductions: calc.deducts,
@@ -308,41 +299,49 @@
                 items: items
             };
 
-            const current = getInvoices();
-            current.push(payload);
-            saveInvoices(current);
-
-            alert("تم حفظ الفاتورة محلياً بنجاح!");
-            document.getElementById('itemsContainer').innerHTML = '';
-            addInvoiceItemRow();
-            document.getElementById('inv_deductions').value = 0;
-            calcInv();
-            loadAllData();
+            try {
+                const res = await fetch(`${API_BASE}/invoices`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert("تم حفظ الفاتورة بنجاح في قاعدة البيانات!");
+                    document.getElementById('itemsContainer').innerHTML = '';
+                    addInvoiceItemRow();
+                    document.getElementById('inv_deductions').value = 0;
+                    calcInv();
+                    loadAllData();
+                } else { alert("حدث خطأ أثناء الحفظ."); }
+            } catch (err) { alert("تعذر الاتصال بالسيرفر."); }
         });
 
-        // SAVE EXPENSE LOCALLY
-        document.getElementById('expenseForm').addEventListener('submit', (e) => {
+        document.getElementById('expenseForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const payload = {
-                id: Date.now(),
                 date: document.getElementById('e_date').value,
                 category: document.getElementById('e_category').value,
                 description: document.getElementById('e_desc').value,
                 amount: parseFloat(document.getElementById('e_amount').value)
             };
 
-            const current = getExpenses();
-            current.push(payload);
-            saveExpenses(current);
-
-            alert("تم تسجيل المصروف محلياً بنجاح!");
-            e.target.reset();
-            document.getElementById('e_date').valueAsDate = new Date();
-            loadAllData();
+            try {
+                const res = await fetch(`${API_BASE}/expenses`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                if (res.ok) {
+                    alert("تم تسجيل المصروف بنجاح!");
+                    e.target.reset();
+                    document.getElementById('e_date').valueAsDate = new Date();
+                    loadAllData();
+                } else { alert("حدث خطأ أثناء الحفظ."); }
+            } catch (err) { alert("تعذر الاتصال بالسيرفر."); }
         });
 
         // ==========================================
-        // EXCEL PARSER
+        // EXCEL PARSER (يبقى كما هو)
         // ==========================================
         function parseNum(val) {
             if (val === null || val === undefined || val === '') return 0;
@@ -476,7 +475,7 @@
                         });
 
                         if (items.length > 0) {
-                            draftInvoices.push({ id: Date.now() + sidx, invoice_ref: invoiceRef, date: finalSheetDateStr, deductions: deductions, total_gross: totalGross, net_total: totalGross - deductions, items: items });
+                            draftInvoices.push({ invoice_ref: invoiceRef, date: finalSheetDateStr, deductions: deductions, total_gross: totalGross, net_total: totalGross - deductions, items: items });
                         }
                     });
 
@@ -539,68 +538,51 @@
         function toggleAccordion(id) { document.getElementById(id).classList.toggle('hidden'); }
         function cancelImport() { draftInvoices = []; document.getElementById('draftArea').classList.add('hidden'); document.getElementById('fileInput').value = ''; }
 
-        // BULK SAVE TO LOCAL STORAGE
-        function bulkSaveInvoices() {
+        // BULK SAVE TO API
+        async function bulkSaveInvoices() {
             if (draftInvoices.length === 0) return;
-            const current = getInvoices();
-            saveInvoices([...current, ...draftInvoices]);
-            alert("تم حفظ كل فواتير الإكسل بنجاح في متصفحك!");
-            cancelImport();
-            loadAllData();
+            try {
+                const res = await fetch(`${API_BASE}/invoices/bulk`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(draftInvoices)
+                });
+                if (res.ok) {
+                    alert("تم حفظ كل فواتير الإكسل بنجاح في قاعدة البيانات السحابية!");
+                    cancelImport();
+                    loadAllData();
+                } else { alert("حدث خطأ أثناء الحفظ الجماعي."); }
+            } catch(e) { alert("تعذر الاتصال بالسيرفر."); }
         }
 
-        // --- REPORTS & MODALS ---
-        function populateCropFilters(invs) {
-            const cropsSet = new Set();
-            invs.forEach(inv => inv.items.forEach(it => cropsSet.add(it.crop_name)));
-            globalCrops = Array.from(cropsSet);
-
-            const filter = document.getElementById('filter_crop');
-            filter.innerHTML = '<option value="الكل">الكل (شامل)</option>';
-            globalCrops.forEach(c => filter.innerHTML += `<option value="${c}">${c}</option>`);
+        // --- REPORTS & MODALS (FETCH FROM API) ---
+        async function populateCropFilters() {
+            try {
+                const res = await fetch(`${API_BASE}/crops`);
+                globalCrops = await res.json();
+                const filter = document.getElementById('filter_crop');
+                filter.innerHTML = '<option value="الكل">الكل (شامل)</option>';
+                globalCrops.forEach(c => filter.innerHTML += `<option value="${c}">${c}</option>`);
+            } catch(e) { console.error(e); }
         }
 
-        function fetchReportSummary() {
+        async function fetchReportSummary() {
             const start = document.getElementById('filter_start').value;
             const end = document.getElementById('filter_end').value;
             const crop = document.getElementById('filter_crop').value;
 
-            const invs = getInvoices();
-            let t_weight = 0, t_gross = 0, t_deducts = 0, t_net = 0;
+            let q = `?crop_name=${encodeURIComponent(crop)}`;
+            if (start) q += `&start_date=${start}`;
+            if (end) q += `&end_date=${end}`;
 
-            invs.forEach(inv => {
-                if (start && inv.date < start) return;
-                if (end && inv.date > end) return;
-
-                let invGross = 0;
-                let includeInv = false;
-
-                inv.items.forEach(it => {
-                    if (crop === 'الكل' || it.crop_name === crop) {
-                        includeInv = true;
-                        invGross += it.subtotal;
-                        t_weight += it.net_weight;
-                    }
-                });
-
-                if (includeInv) {
-                    t_gross += invGross;
-                    if (crop === 'الكل') {
-                        t_deducts += inv.deductions;
-                    } else {
-                        // نسبة وتناسب للعمولة إذا اخترنا صنف واحد
-                        let ratio = invGross / (inv.total_gross || 1);
-                        t_deducts += (inv.deductions * ratio);
-                    }
-                }
-            });
-
-            t_net = t_gross - t_deducts;
-
-            document.getElementById('rep_weight').innerText = Math.round(t_weight).toLocaleString() + ' كغ';
-            document.getElementById('rep_gross').innerText = Math.round(t_gross).toLocaleString();
-            document.getElementById('rep_deducts').innerText = Math.round(t_deducts).toLocaleString();
-            document.getElementById('rep_net').innerText = Math.round(t_net).toLocaleString();
+            try {
+                const res = await fetch(`${API_BASE}/reports/summary${q}`);
+                const d = await res.json();
+                document.getElementById('rep_weight').innerText = Math.round(d.total_weight || 0).toLocaleString() + ' كغ';
+                document.getElementById('rep_gross').innerText = Math.round(d.total_gross || 0).toLocaleString();
+                document.getElementById('rep_deducts').innerText = Math.round(d.total_deductions || 0).toLocaleString();
+                document.getElementById('rep_net').innerText = Math.round(d.total_net || 0).toLocaleString();
+            } catch(e) { console.error("Report error", e); }
         }
 
         function renderCropCardsGrid() {
@@ -616,40 +598,44 @@
             `).join('');
         }
 
-        function openCropModal(name) {
-            document.getElementById('cropModal').style.display = 'block';
-            document.getElementById('modalTitle').innerText = `أرشيف صنف: ${name}`;
-
-            const y = document.getElementById('modalYearFilter').value;
-            const invs = getInvoices();
-
-            let t_rev = 0, t_w = 0, html = '';
-
-            invs.forEach(inv => {
-                if(inv.date.startsWith(y)) {
-                    inv.items.forEach(it => {
-                        if(it.crop_name === name) {
-                            t_rev += it.subtotal;
-                            t_w += it.net_weight;
-                            html += `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold" dir="ltr">${inv.date.split('-').reverse().join('/')}</td><td class="p-3 text-center">${it.box_count}</td><td class="p-3 text-center font-bold">${it.net_weight}</td><td class="p-3 text-center">${it.unit_price.toLocaleString()}</td><td class="p-3 text-center font-black">${it.subtotal.toLocaleString()}</td></tr>`;
-                        }
-                    });
-                }
-            });
-
-            document.getElementById('modalRev').innerText = t_rev.toLocaleString() + ' ل.س';
-            document.getElementById('modalWeight').innerText = t_w.toLocaleString() + ' كغ';
-            document.getElementById('modalTableBody').innerHTML = html || '<tr><td colspan="5" class="p-8 text-center text-slate-400">لا يوجد بيانات لهذه السنة</td></tr>';
+        function triggerModalUpdate() {
+            if (currentModalCrop) openCropModal(currentModalCrop);
         }
 
-        function closeModal() { document.getElementById('cropModal').style.display = 'none'; }
+        async function openCropModal(name) {
+            currentModalCrop = name;
+            document.getElementById('cropModal').style.display = 'block';
+            document.getElementById('modalTitle').innerText = `أرشيف صنف: ${name}`;
+            document.getElementById('modalTableBody').innerHTML = '<tr><td colspan="5" class="p-8 text-center text-slate-400">جاري تحميل البيانات...</td></tr>';
 
-        function resetDatabase() {
-            if (confirm("تنبيه أمان: هل أنت متأكد من تصفير النظام نهائياً ومسح كافة البيانات؟")) {
-                localStorage.removeItem(DB_INVOICES);
-                localStorage.removeItem(DB_EXPENSES);
-                alert("تم تصفير النظام محلياً بنجاح!");
-                location.reload();
+            const y = document.getElementById('modalYearFilter').value;
+
+            try {
+                const res = await fetch(`${API_BASE}/crops/${encodeURIComponent(name)}/history?year=${y}`);
+                const d = await res.json();
+
+                document.getElementById('modalRev').innerText = Math.round(d.total_revenue || 0).toLocaleString() + ' ل.س';
+                document.getElementById('modalWeight').innerText = Math.round(d.total_weight || 0).toLocaleString() + ' كغ';
+
+                let html = '';
+                d.history.forEach(h => {
+                    html += `<tr class="hover:bg-slate-50 transition"><td class="p-3 font-bold" dir="ltr">${h.invoice_date.split('-').reverse().join('/')}</td><td class="p-3 text-center">${h.box_count}</td><td class="p-3 text-center font-bold">${h.net_weight}</td><td class="p-3 text-center">${h.unit_price.toLocaleString()}</td><td class="p-3 text-center font-black">${h.subtotal.toLocaleString()}</td></tr>`;
+                });
+                document.getElementById('modalTableBody').innerHTML = html || '<tr><td colspan="5" class="p-8 text-center text-slate-400">لا يوجد بيانات لهذه السنة</td></tr>';
+            } catch(e) {
+                document.getElementById('modalTableBody').innerHTML = '<tr><td colspan="5" class="p-8 text-center text-red-400">خطأ في جلب البيانات</td></tr>';
+            }
+        }
+
+        function closeModal() { document.getElementById('cropModal').style.display = 'none'; currentModalCrop = ''; }
+
+        async function resetDatabase() {
+            if (confirm("تنبيه أمان: هل أنت متأكد من تصفير النظام نهائياً ومسح كافة البيانات من السيرفر؟")) {
+                try {
+                    await fetch(`${API_BASE}/reset`, { method: 'DELETE' });
+                    alert("تم تصفير قاعدة البيانات السحابية بنجاح!");
+                    location.reload();
+                } catch(e) { alert("فشل الاتصال بالسيرفر."); }
             }
         }
     </script>

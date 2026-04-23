@@ -1,7 +1,8 @@
-from fastapi import FastAPI, Depends, Request, Query
+from fastapi import FastAPI, Depends, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from sqlalchemy import func
+from sqlalchemy import func, extract
 from typing import List, Optional
 from datetime import date
 import models, schemas
@@ -11,9 +12,18 @@ models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="DOUMITT")
 
+# إعدادات الـ CORS للسماح للواجهة الأمامية (GitHub Pages) بالاتصال بالسيرفر (Railway)
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # يسمح لأي موقع بالاتصال، يمكنك لاحقاً وضع رابط GitHub Pages الخاص بك هنا
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 templates = Jinja2Templates(directory="templates")
 
-# Dependency
+
 def get_db():
     db = SessionLocal()
     try:
@@ -21,9 +31,11 @@ def get_db():
     finally:
         db.close()
 
+
 @app.get("/")
 def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
+
 
 @app.post("/api/invoices", response_model=schemas.InvoiceResponse)
 def add_invoice(invoice: schemas.InvoiceCreate, db: Session = Depends(get_db)):
@@ -40,10 +52,11 @@ def add_invoice(invoice: schemas.InvoiceCreate, db: Session = Depends(get_db)):
     for item in invoice.items:
         db_item = models.InvoiceItem(**item.dict(), invoice_id=db_invoice.id)
         db.add(db_item)
-    
+
     db.commit()
     db.refresh(db_invoice)
     return db_invoice
+
 
 @app.post("/api/invoices/bulk", response_model=List[schemas.InvoiceResponse])
 def add_invoices_bulk(invoices: List[schemas.InvoiceCreate], db: Session = Depends(get_db)):
@@ -56,18 +69,19 @@ def add_invoices_bulk(invoices: List[schemas.InvoiceCreate], db: Session = Depen
             net_total=invoice.net_total
         )
         db.add(db_invoice)
-        db.flush() # To get the id
-        
+        db.flush()
+
         for item in invoice.items:
             db_item = models.InvoiceItem(**item.dict(), invoice_id=db_invoice.id)
             db.add(db_item)
-            
+
         db_invoices.append(db_invoice)
-        
+
     db.commit()
     for inv in db_invoices:
         db.refresh(inv)
     return db_invoices
+
 
 @app.post("/api/expenses", response_model=schemas.ExpenseResponse)
 def add_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
@@ -77,13 +91,6 @@ def add_expense(expense: schemas.ExpenseCreate, db: Session = Depends(get_db)):
     db.refresh(db_expense)
     return db_expense
 
-@app.get("/api/invoices", response_model=list[schemas.InvoiceResponse])
-def get_invoices(db: Session = Depends(get_db), skip: int = 0, limit: int = 20):
-    return db.query(models.Invoice).order_by(models.Invoice.id.desc()).offset(skip).limit(limit).all()
-
-@app.get("/api/expenses", response_model=list[schemas.ExpenseResponse])
-def get_expenses(db: Session = Depends(get_db), skip: int = 0, limit: int = 20):
-    return db.query(models.ExpenseRecord).order_by(models.ExpenseRecord.id.desc()).offset(skip).limit(limit).all()
 
 @app.get("/api/summary", response_model=schemas.SummaryResponse)
 def get_summary(db: Session = Depends(get_db)):
@@ -96,12 +103,13 @@ def get_summary(db: Session = Depends(get_db)):
         net_profit=net_profit
     )
 
+
 @app.get("/api/reports/summary", response_model=schemas.ReportSummaryResponse)
 def get_reports_summary(
-    start_date: Optional[date] = None,
-    end_date: Optional[date] = None,
-    crop_name: Optional[str] = None,
-    db: Session = Depends(get_db)
+        start_date: Optional[date] = None,
+        end_date: Optional[date] = None,
+        crop_name: Optional[str] = None,
+        db: Session = Depends(get_db)
 ):
     query = db.query(
         func.sum(models.Invoice.total_gross).label("total_gross"),
@@ -109,16 +117,16 @@ def get_reports_summary(
         func.sum(models.Invoice.net_total).label("total_net"),
         func.sum(models.InvoiceItem.net_weight).label("total_weight")
     ).join(models.InvoiceItem)
-    
+
     if start_date:
         query = query.filter(models.Invoice.date >= start_date)
     if end_date:
         query = query.filter(models.Invoice.date <= end_date)
     if crop_name and crop_name != "الكل":
         query = query.filter(models.InvoiceItem.crop_name == crop_name)
-        
+
     result = query.first()
-    
+
     return schemas.ReportSummaryResponse(
         total_gross=result.total_gross or 0.0,
         total_deductions=result.total_deductions or 0.0,
@@ -126,19 +134,27 @@ def get_reports_summary(
         total_weight=result.total_weight or 0.0
     )
 
+
 @app.get("/api/crops", response_model=list[str])
 def get_crops(db: Session = Depends(get_db)):
     crops = db.query(models.InvoiceItem.crop_name).distinct().all()
     return [crop[0] for crop in crops]
 
+
 @app.get("/api/crops/{crop_name}/history", response_model=schemas.CropHistoryResponse)
-def get_crop_history(crop_name: str, db: Session = Depends(get_db)):
-    items = db.query(models.InvoiceItem, models.Invoice.date).join(models.Invoice).filter(models.InvoiceItem.crop_name == crop_name).order_by(models.Invoice.date.desc()).all()
-    
+def get_crop_history(crop_name: str, year: Optional[int] = None, db: Session = Depends(get_db)):
+    query = db.query(models.InvoiceItem, models.Invoice.date).join(models.Invoice).filter(
+        models.InvoiceItem.crop_name == crop_name)
+
+    if year:
+        query = query.filter(extract('year', models.Invoice.date) == year)
+
+    items = query.order_by(models.Invoice.date.desc()).all()
+
     history_list = []
     total_weight = 0.0
     total_revenue = 0.0
-    
+
     for item, inv_date in items:
         history_list.append(schemas.CropHistoryItem(
             invoice_date=inv_date,
@@ -149,13 +165,14 @@ def get_crop_history(crop_name: str, db: Session = Depends(get_db)):
         ))
         total_weight += item.net_weight
         total_revenue += item.subtotal
-        
+
     return schemas.CropHistoryResponse(
         crop_name=crop_name,
-        history=history_list, # Pydantic handles date serialization
+        history=history_list,
         total_weight=total_weight,
         total_revenue=total_revenue
     )
+
 
 @app.delete("/api/reset")
 def reset_database(db: Session = Depends(get_db)):
