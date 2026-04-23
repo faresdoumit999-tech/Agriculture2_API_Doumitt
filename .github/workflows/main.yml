@@ -27,7 +27,10 @@ jobs:
         pip install -r requirements.txt
         pip install pytest httpx
 
-    # 4. تشغيل الفحص اللي كتبناه!
+# 4. تشغيل الفحص اللي كتبناه!
     - name: Run Tests (Pytest)
+      env:
+        DATABASE_URL: "sqlite:///./test_dummy.db" # رابط قاعدة بيانات وهمية للفحص
+        SECRET_KEY: "super-secret-test-key" # مفتاح وهمي
       run: |
         pytest
