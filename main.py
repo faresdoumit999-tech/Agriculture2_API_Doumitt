@@ -5,7 +5,7 @@ from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract
 from typing import List, Optional
-from datetime import date, datetime, timedelta
+from datetime import datetime, timedelta, timezone, date
 from passlib.context import CryptContext
 from jose import JWTError, jwt
 
@@ -56,7 +56,9 @@ def get_password_hash(password):
 
 def create_access_token(data: dict):
     to_encode = data.copy()
-    expire = datetime.utcnow() + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    # الكود القديم: expire = datetime.utcnow() + timedelta(...)
+    # الكود الجديد:
+    expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 

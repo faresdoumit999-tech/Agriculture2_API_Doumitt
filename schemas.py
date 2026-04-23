@@ -1,7 +1,7 @@
 from pydantic import BaseModel
 from datetime import date
 from typing import List, Optional
-
+from pydantic import ConfigDict
 # --- Auth Schemas ---
 class UserCreate(BaseModel):
     username: str
@@ -25,8 +25,8 @@ class InvoiceItemCreate(InvoiceItemBase):
 class InvoiceItemResponse(InvoiceItemBase):
     id: int
     invoice_id: int
-    class Config:
-        from_attributes = True
+
+    model_config = ConfigDict(from_attributes=True)
 
 class InvoiceBase(BaseModel):
     date: date
@@ -39,9 +39,9 @@ class InvoiceCreate(InvoiceBase):
 
 class InvoiceResponse(InvoiceBase):
     id: int
-    items: List[InvoiceItemResponse]
-    class Config:
-        from_attributes = True
+    items: List[InvoiceItemResponse]=[]
+
+    model_config = ConfigDict(from_attributes=True)
 
 class ExpenseBase(BaseModel):
     date: date
@@ -54,8 +54,8 @@ class ExpenseCreate(ExpenseBase):
 
 class ExpenseResponse(ExpenseBase):
     id: int
-    class Config:
-        from_attributes = True
+    
+    model_config = ConfigDict(from_attributes=True)
 
 class SummaryResponse(BaseModel):
     total_income: float
