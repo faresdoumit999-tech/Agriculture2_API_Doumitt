@@ -2,6 +2,16 @@ from pydantic import BaseModel
 from datetime import date
 from typing import List, Optional
 
+# --- Auth Schemas ---
+class UserCreate(BaseModel):
+    username: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+
+# --- App Schemas ---
 class InvoiceItemBase(BaseModel):
     crop_name: str
     box_count: int
@@ -15,7 +25,6 @@ class InvoiceItemCreate(InvoiceItemBase):
 class InvoiceItemResponse(InvoiceItemBase):
     id: int
     invoice_id: int
-
     class Config:
         from_attributes = True
 
@@ -31,7 +40,6 @@ class InvoiceCreate(InvoiceBase):
 class InvoiceResponse(InvoiceBase):
     id: int
     items: List[InvoiceItemResponse]
-
     class Config:
         from_attributes = True
 
@@ -46,7 +54,6 @@ class ExpenseCreate(ExpenseBase):
 
 class ExpenseResponse(ExpenseBase):
     id: int
-
     class Config:
         from_attributes = True
 

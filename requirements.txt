@@ -4,3 +4,6 @@ SQLAlchemy
 psycopg2-binary
 python-dotenv
 jinja2
+passlib[bcrypt]
+python-jose[cryptography]
+python-multipart
