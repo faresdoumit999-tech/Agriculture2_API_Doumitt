@@ -214,8 +214,7 @@
         // ==========================================
         // API CONFIGURATION (الربط مع Railway)
         // ==========================================
-        // غير هذا الرابط إلى رابط Railway الخاص بك بمجرد رفعه!
-        const API_BASE = 'postgresql://postgres:hQPSFjXuzHTlTUzaVfcKFnHjGQoAhkTi@monorail.proxy.rlwy.net:46808/railway';
+        const API_BASE = 'https://agriculture2apidoumitt-production.up.railway.app/api';
 
         let globalCrops = [];
         let itemIndex = 0;
@@ -341,7 +340,7 @@
         });
 
         // ==========================================
-        // EXCEL PARSER (يبقى كما هو)
+        // EXCEL PARSER (النسخة الحاسمة للتواريخ)
         // ==========================================
         function parseNum(val) {
             if (val === null || val === undefined || val === '') return 0;
@@ -352,23 +351,53 @@
 
         function extractSyrianDate(val) {
             if (!val) return null;
-            if (val instanceof Date) return `${val.getFullYear()}-${String(val.getMonth() + 1).padStart(2, '0')}-${String(val.getDate()).padStart(2, '0')}`;
-            if (typeof val === 'number') {
-                let utcDate = new Date((val - 25569 + 0.5) * 86400 * 1000);
-                return `${utcDate.getUTCFullYear()}-${String(utcDate.getUTCMonth() + 1).padStart(2, '0')}-${String(utcDate.getUTCDate()).padStart(2, '0')}`;
+
+            let d, m, y;
+
+            if (val instanceof Date) {
+                // تلبية لطلبك: نقوم بعكس اليوم والشهر بشكل إجباري وقاطع
+                m = val.getDate();
+                d = val.getMonth() + 1;
+                y = val.getFullYear();
             }
-            let str = String(val).trim();
-            let parts = str.split(/[\/\-\. ]+/);
-            if (parts.length >= 3) {
-                let p0 = parseInt(parts[0]), p1 = parseInt(parts[1]), p2 = parseInt(parts[2]);
-                let y, m, d;
-                if (p2 > 1000) { d = p0; m = p1; y = p2; }
-                else if (p0 > 1000) { y = p0; m = p1; d = p2; }
-                else return null;
-                if (m > 12 && d <= 12) { let t = m; m = d; d = t; }
-                return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
+            else if (typeof val === 'number') {
+                let dateObj = new Date((val - 25569 + 0.5) * 86400 * 1000);
+                // تلبية لطلبك: نقوم بعكس اليوم والشهر بشكل إجباري وقاطع
+                m = dateObj.getUTCDate();
+                d = dateObj.getUTCMonth() + 1;
+                y = dateObj.getUTCFullYear();
             }
-            return null;
+            else {
+                let str = String(val).trim();
+                let parts = str.split(/[\/\-\. ]+/);
+                if (parts.length >= 3) {
+                    let p1 = parseInt(parts[0]);
+                    let p2 = parseInt(parts[1]);
+                    let p3 = parseInt(parts[2]);
+
+                    // بناءً على طلبك، نعكس الخانة الأولى والثانية إجبارياً
+                    if (p3 > 1000) {
+                        y = p3; m = p1; d = p2;
+                    }
+                    else if (p1 > 1000) {
+                        y = p1; m = p3; d = p2;
+                    }
+                    else {
+                        y = 2000 + p3; m = p1; d = p2;
+                    }
+                } else {
+                    return null;
+                }
+            }
+
+            // صمام أمان العباقرة: إذا عكسنا الخانات وطلع معنا الشهر رقم 15 مثلاً!
+            // هذا يعني أن الإكسل كان قارئها صح من الأساس (يوم 15)، فنرجع نقلبهم للصح
+            if (m > 12 && d <= 12) {
+                let temp = m; m = d; d = temp;
+            }
+
+            if (isNaN(d) || isNaN(m) || isNaN(y)) return null;
+            return `${y}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}`;
         }
 
         function setupDragAndDrop() {
