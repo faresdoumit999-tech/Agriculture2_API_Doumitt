@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # 🗄️ الحاوية الأولى: قاعدة البيانات (الملعب المحلي)
+  db:
+    image: postgres:15-alpine  # نستخدم نسخة خفيفة وسريعة من بوستجري
+    container_name: agriculture_local_db
+    environment:
+      - POSTGRES_USER=admin
+      - POSTGRES_PASSWORD=secret123
+      - POSTGRES_DB=agriculture_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data # لحفظ البيانات حتى لو طفينا الحاوية
+
+  # 🚀 الحاوية الثانية: سيرفر الباك إند (كودك)
+  web:
+    build: .  # ابني الحاوية من ملف الـ Dockerfile الموجود بنفس المجلد
+    container_name: agriculture_fastapi
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload # السحر هنا: فعلنا ميزة التحديث التلقائي
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db  # لا تشغل كود البايثون إلا بعد ما تجهز قاعدة البيانات
+    volumes:
+      - .:/app  # 🪄 سحر الـ Live Reload: نربط مجلد اللابتوب بالحاوية لتحديث الكود فوراً
+    env_file:
+      - .env
+
+# تعريف المساحة التخزينية لقاعدة البيانات
+volumes:
+  postgres_data:
