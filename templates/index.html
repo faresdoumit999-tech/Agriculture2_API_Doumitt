@@ -133,7 +133,18 @@
     <div id="cropModal" class="modal"><div class="modal-content relative animate-in fade-in zoom-in duration-300"><button onclick="closeModal()" class="absolute top-4 left-4 text-slate-400 hover:text-black font-black text-2xl transition-colors">&times;</button><h2 id="modalTitle" class="text-3xl font-black text-slate-800 mb-6 border-b pb-4">أرشيف المحصول</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6"><div class="bg-slate-50 p-4 rounded-2xl border"><p class="text-xs font-bold text-slate-400 uppercase">الربح الصافي</p><p id="modalRev" class="text-2xl font-black text-agri-dark">0</p></div><div class="bg-slate-50 p-4 rounded-2xl border"><p class="text-xs font-bold text-slate-400 uppercase">الأوزان</p><p id="modalWeight" class="text-2xl font-black text-slate-800">0 كغ</p></div><div class="flex items-end"><select id="modalYearFilter" class="w-full border rounded-xl p-3 font-bold bg-white focus:ring-2 focus:ring-agri-base outline-none" onchange="triggerModalUpdate()"><option value="2026">2026</option><option value="2025">2025</option></select></div></div><div class="overflow-y-auto max-h-[450px] rounded-xl border border-slate-200"><table class="w-full text-right text-sm"><thead class="bg-slate-50 text-slate-500 sticky top-0 shadow-sm font-bold"><tr><th class="p-3">التاريخ</th><th class="p-3 text-center">طرد</th><th class="p-3 text-center">الوزن</th><th class="p-3 text-center">السعر</th><th class="p-3 text-center">الصافي</th></tr></thead><tbody id="modalTableBody" class="divide-y divide-slate-100"></tbody></table></div></div></div>
 
     <script>
-        const API_BASE = 'https://agriculture2apidoumitt-production.up.railway.app/api';
+        let API_BASE = '';
+
+// الواجهة تسأل المتصفح: هل أنا أعمل على اللابتوب المحلي؟
+if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
+    // إذا كان الجواب نعم، استخدم سيرفر اللابتوب
+    API_BASE = 'http://localhost:8000/api';
+    console.log("🟢 Running in LOCAL mode");
+} else {
+    // إذا كان الجواب لا (بمعنى أن المزارع فتح الموقع من الإنترنت)، استخدم سيرفر Railway
+    API_BASE = 'https://agriculture2apidoumitt-production.up.railway.app/api';
+    console.log("☁️ Running in PRODUCTION mode");
+}
 
         // 🔐 AUTH LOGIC
         let isLoginMode = true;
