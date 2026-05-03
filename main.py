@@ -12,7 +12,7 @@ from jose import JWTError, jwt
 import models, schemas
 from database import SessionLocal, engine
 
-models.Base.metadata.create_all(bind=engine)
+#models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="DOUMITT SaaS")
 
