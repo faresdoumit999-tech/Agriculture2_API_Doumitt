@@ -19,11 +19,16 @@ load_dotenv()  # تحميل الرابط من ملف .env
 config = context.config
 
 # 🌟 التعديل السحري: جلب الرابط وتبديل db بـ 127.0.0.1 ليعمل على نظامك المحلي
+# 🌟 التعديل السحري
 db_url = os.getenv("DATABASE_URL")
-if db_url and "@db:5432" in db_url:
-    db_url = db_url.replace("@db:5432", "@127.0.0.1:5433")
+if db_url:
+    # 1. نخفي كلمة asyncpg عن ألمبيك لحتى تضل شغالة بالطريقة الكلاسيكية المستقرة
+    db_url = db_url.replace("+asyncpg", "")
 
-# حقن رابط الداتا بيز ديناميكياً بعد التعديل
+    # 2. نبدل الباب للويندوز
+    if "@db:5432" in db_url:
+        db_url = db_url.replace("@db:5432", "@127.0.0.1:5433")
+
 config.set_main_option("sqlalchemy.url", db_url)
 
 # Interpret the config file for Python logging.

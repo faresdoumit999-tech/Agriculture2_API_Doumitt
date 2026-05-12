@@ -24,7 +24,7 @@ class Invoice(Base):
     net_total = Column(Float, default=0.0)
     owner_id = Column(Integer, ForeignKey("users.id"))
 
-    items = relationship("InvoiceItem", back_populates="invoice", cascade="all, delete-orphan")
+    items = relationship("InvoiceItem", back_populates="invoice", lazy="selectin", cascade="all, delete")
     owner = relationship("User", back_populates="invoices")
 
 
