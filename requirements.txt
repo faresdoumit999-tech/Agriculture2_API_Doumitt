@@ -10,4 +10,5 @@ python-jose[cryptography]
 python-multipart
 pytest
 httpx
+alembic
 asyncpg
