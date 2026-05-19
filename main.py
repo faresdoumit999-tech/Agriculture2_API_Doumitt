@@ -7,11 +7,14 @@ from typing import List, Optional
 from datetime import datetime, timedelta, timezone, date
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-
+from fastapi.staticfiles import StaticFiles  # ضفنا هي الكلمة هون
 import models, schemas
 from database import SessionLocal, engine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
+from fastapi.responses import JSONResponse
+from exceptions import DoumittBaseException, UserAlreadyExistsError, InvoiceNotFoundError
+from sqlalchemy.orm import selectinload
 
 app = FastAPI(title="DOUMITT SaaS")
 
@@ -22,8 +25,22 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
+@app.exception_handler(DoumittBaseException)
+async def doumitt_exception_handler(request: Request, exc: DoumittBaseException):
+    """
+    هذا المعالج سيلتقط أي خطأ يورث من DoumittBaseException
+    ويقوم بتغليفه في رد JSON احترافي موحد.
+    """
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={
+            "error_type": exc.__class__.__name__,
+            "message": exc.message,
+            "path": request.url.path
+        }
+    )
 templates = Jinja2Templates(directory="templates")
+app.mount("/static", StaticFiles(directory="static"), name="static") # 👈 ضيف هاد السطر
 
 
 async def get_db():
@@ -86,14 +103,15 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
 # ==========================================
 # 🚪 مسارات تسجيل الدخول والاشتراك
 # ==========================================
-@app.post("/api/register", response_model=schemas.Token)
+@app.post("/api/register")
 async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db)):
     query = select(models.User).where(models.User.username == user.username)
     result = await db.execute(query)
     existing_user = result.scalars().first()
 
     if existing_user:
-        raise HTTPException(status_code=400, detail="Username already registered")
+        # هنا السيرفر يتحدث بلغة المشروع ويرمي الخطأ المخصص
+        raise UserAlreadyExistsError(username=user.username)
 
     hashed_password = get_password_hash(user.password)
     new_user = models.User(username=user.username, hashed_password=hashed_password)
@@ -166,6 +184,31 @@ async def add_invoices_bulk(invoices: List[schemas.InvoiceCreate],
         await db.refresh(inv)
     return db_invoices
 
+
+@app.get("/api/invoices", response_model=List[schemas.InvoiceResponse])
+async def get_invoices(
+        skip: int = 0,  # التجاوز (Offset) - الافتراضي 0
+        limit: int = 20,  # الحد الأقصى (Limit) - الافتراضي 20
+        current_user: models.User = Depends(get_current_user),
+        db: AsyncSession = Depends(get_db)
+):
+    """
+    مسار جلب فواتير المزارع مع ميزة تقسيم الصفحات (Pagination)
+    وجلب العناصر المرتبطة (Items) بشكل آمن ومتزامن.
+    """
+    query = (
+        select(models.Invoice)
+        .where(models.Invoice.owner_id == current_user.id)
+        .options(selectinload(models.Invoice.items))  # 🌟 السر المعماري لتجنب أخطاء الـ Async
+        .order_by(models.Invoice.date.desc())  # ترتيب من الأحدث للأقدم
+        .offset(skip)  # تطبيق التجاوز
+        .limit(limit)  # تطبيق الحد الأقصى
+    )
+
+    result = await db.execute(query)
+    invoices = result.scalars().all()
+
+    return invoices
 
 @app.post("/api/expenses", response_model=schemas.ExpenseResponse)
 async def add_expense(expense: schemas.ExpenseCreate, current_user: models.User = Depends(get_current_user),

@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>DOUMITT | Precision Ag Dashboard</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Manrope:wght@600;700;800&family=JetBrains+Mono:wght@500;600&family=Cairo:wght@400;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@100..700,FILL@0..1,GRAD@0,opsz@24&display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "outline": "#86948a",
+                      "secondary-container": "#0566d9",
+                      "surface-tint": "#4edea3",
+                      "tertiary-fixed": "#ffdad7",
+                      "tertiary-container": "#fc7c78",
+                      "on-tertiary-fixed": "#410005",
+                      "surface-bright": "#343b36",
+                      "on-secondary": "#002e6a",
+                      "on-primary": "#003824",
+                      "surface-container": "#1a211d",
+                      "on-tertiary-container": "#711419",
+                      "tertiary-fixed-dim": "#ffb3af",
+                      "secondary-fixed": "#d8e2ff",
+                      "outline-variant": "#3c4a42",
+                      "on-secondary-container": "#e6ecff",
+                      "on-tertiary-fixed-variant": "#842225",
+                      "inverse-on-surface": "#2b322d",
+                      "surface-container-highest": "#2f3632",
+                      "on-background": "#dde4dd",
+                      "on-tertiary": "#650911",
+                      "primary-fixed-dim": "#4edea3",
+                      "on-error-container": "#ffdad6",
+                      "on-secondary-fixed-variant": "#004395",
+                      "on-primary-container": "#00422b",
+                      "surface": "#0e1511",
+                      "on-surface": "#dde4dd",
+                      "secondary": "#adc6ff",
+                      "primary-container": "#10b981",
+                      "on-secondary-fixed": "#001a42",
+                      "background": "#0e1511",
+                      "error": "#ffb4ab",
+                      "on-surface-variant": "#bbcabf",
+                      "on-error": "#690005",
+                      "inverse-surface": "#dde4dd",
+                      "surface-container-lowest": "#09100c",
+                      "inverse-primary": "#006c49",
+                      "surface-container-high": "#242c27",
+                      "surface-dim": "#0e1511",
+                      "secondary-fixed-dim": "#adc6ff",
+                      "error-container": "#93000a",
+                      "on-primary-fixed": "#002113",
+                      "surface-container-low": "#161d19",
+                      "surface-variant": "#2f3632",
+                      "tertiary": "#ffb3af",
+                      "primary-fixed": "#6ffbbe",
+                      "brand-green": "#74bd9f"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.125rem",
+                      "lg": "0.25rem",
+                      "xl": "0.5rem",
+                      "full": "0.75rem"
+              },
+              "spacing": {
+                      "base": "8px",
+                      "gutter": "24px",
+                      "container-max": "1440px",
+                      "xs": "4px",
+                      "sm": "12px",
+                      "md": "24px",
+                      "lg": "40px",
+                      "xl": "64px"
+              },
+              "fontFamily": {
+                      "body-lg": ["Inter", "Cairo"],
+                      "body-md": ["Inter", "Cairo"],
+                      "headline-lg": ["Manrope", "Cairo"],
+                      "headline-md": ["Manrope", "Cairo"],
+                      "label-caps": ["JetBrains Mono", "Cairo"],
+                      "data-point": ["JetBrains Mono", "Cairo"],
+                      "body-sm": ["Inter", "Cairo"],
+                      "display-lg": ["Manrope", "Cairo"]
+              },
+              "fontSize": {
+                      "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                      "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500"}],
+                      "data-point": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                      "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                      "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+    <style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #0e1511;
+            color: #dde4dd;
+        }
+        .tonal-layer-1 {
+            background-color: #1a211d;
+            border: 1px solid #3c4a42;
+        }
+        .green-glow:hover {
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.15);
+        }
+        .hidden { display: none !important; }
+
+        /* RTL Styles */
+        [dir="rtl"] {
+            font-family: 'Cairo', sans-serif;
+        }
+        [dir="rtl"] aside {
+            left: auto;
+            right: 0;
+            border-right: none;
+            border-left-width: 1px;
+            border-left-color: #3c4a42;
+        }
+        [dir="rtl"] main {
+            margin-left: 0;
+            margin-right: 16rem; /* 64 * 4px = 16rem */
+        }
+        [dir="rtl"] header .absolute.left-3 {
+            left: auto;
+            right: 0.75rem;
+        }
+        [dir="rtl"] header input {
+            padding-left: 1rem;
+            padding-right: 2.5rem;
+        }
+        [dir="rtl"] .border-r-4 {
+            border-right-width: 0;
+            border-left-width: 4px;
+        }
+    </style>
+</head>
+<body class="font-body-md text-body-md overflow-x-hidden">
+
+<!-- Auth Section -->
+<section id="auth-section" class="min-h-screen flex items-center justify-center bg-surface p-md relative transition-all duration-300">
+    <div class="absolute top-md right-md z-10 flex gap-sm">
+        <button id="lang-toggle-auth" class="bg-surface-container border border-outline-variant px-5 py-2.5 rounded-xl flex items-center hover:bg-surface-variant transition-all">
+            <span class="font-label-caps text-xs" id="toggle-label-auth">العربية</span>
+        </button>
+    </div>
+    
+    <div class="tonal-layer-1 p-lg rounded-xl max-w-md w-full space-y-lg shadow-2xl">
+        <div class="text-center space-y-sm">
+            <svg class="w-20 h-20 mx-auto mb-md" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 2L4.5 12H19.5L12 2Z" fill="#74bd9f"/>
+                <path d="M12 8L2 21H22L12 8Z" fill="#74bd9f" fill-opacity="0.8"/>
+                <rect x="11" y="21" width="2" height="3" fill="#74bd9f"/>
+            </svg>
+            <p class="font-label-caps text-outline" id="portal-desc">Precision Ag Portal</p>
+        </div>
+        <form id="login-form" class="space-y-md">
+            <div>
+                <label id="label-username" class="font-label-caps text-outline block mb-xs">Username</label>
+                <input type="text" id="username" required class="w-full bg-surface-container border border-outline-variant rounded-xl py-2 px-4 text-on-surface focus:border-primary outline-none transition-all" placeholder="Enter your username">
+            </div>
+            <div>
+                <label id="label-password" class="font-label-caps text-outline block mb-xs">Password</label>
+                <input type="password" id="password" required class="w-full bg-surface-container border border-outline-variant rounded-xl py-2 px-4 text-on-surface focus:border-primary outline-none transition-all" placeholder="••••••••">
+            </div>
+            <p id="login-error" class="text-error text-xs font-medium hidden">Invalid username or password</p>
+            <button id="login-btn" type="submit" class="w-full bg-primary text-on-primary py-3 rounded-xl font-bold hover:brightness-110 active:scale-[0.98] transition-all">Sign In</button>
+        </form>
+    </div>
+</section>
+
+<!-- Dashboard Section -->
+<section id="dashboard-section" class="hidden">
+    <!-- Sidebar Navigation -->
+    <aside class="fixed left-0 top-0 h-screen flex flex-col pt-md pb-md bg-surface-container dark:bg-surface-container border-r border-outline-variant w-64 z-50">
+        <div class="px-md mb-xl">
+            <div class="flex items-center gap-sm">
+                <div class="w-10 h-10 bg-brand-green/10 rounded flex items-center justify-center">
+                    <span class="material-symbols-outlined text-brand-green">forest</span>
+                </div>
+                <div>
+                    <div class="flex items-center gap-xs">
+                        <span class="material-symbols-outlined text-brand-green">forest</span>
+                        <span class="font-headline-md text-headline-md font-black text-brand-green uppercase tracking-tight">AGRI</span>
+                    </div>
+                    <p class="font-label-caps text-label-caps text-outline" id="nav-ag">Precision Ag</p>
+                </div>
+            </div>
+        </div>
+        <nav class="flex-1 space-y-1">
+            <a class="text-primary font-bold bg-primary-container/10 border-r-4 border-primary px-4 py-3 flex items-center gap-sm transition-all duration-200 ease-in-out" href="#">
+                <span class="font-body-md" id="nav-dash">Dashboard</span>
+            </a>
+            <a class="text-on-surface-variant px-4 py-3 flex items-center gap-sm hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+                <span class="font-body-md" id="nav-inv">Invoices</span>
+            </a>
+            <a class="text-on-surface-variant px-4 py-3 flex items-center gap-sm hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+                <span class="font-body-md" id="nav-exp">Expenses</span>
+            </a>
+            <a class="text-on-surface-variant px-4 py-3 flex items-center gap-sm hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+                <span class="font-body-md" id="nav-rep">Crop Reports</span>
+            </a>
+            <a class="text-on-surface-variant px-4 py-3 flex items-center gap-sm hover:bg-surface-container-high hover:text-on-surface transition-all" href="#">
+                <span class="font-body-md" id="nav-set">Settings</span>
+            </a>
+            <!-- Logout Btn -->
+            <button id="logout-btn" class="w-full text-left text-error px-4 py-3 flex items-center gap-sm hover:bg-error/10 transition-all mt-lg">
+                <span class="font-body-md" id="nav-out">Log Out</span>
+            </button>
+        </nav>
+        <div class="px-md mt-auto">
+            <div class="tonal-layer-1 p-sm rounded-xl flex items-center gap-sm">
+                <img alt="User" class="w-10 h-10 rounded-full border border-outline-variant" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB7qInPQ6TkNXXVamFAHJR1AUQs4K2XRwj09lkLl-G85E650knHr6eqtYpoJDwf-YSu0u6v6JrOTguN2TUCEjy-mfoXqGoP_8L7eRvIgq7lMt2xnvVdtAftR7ZNdDd0SbXqzQzXgCk_qWbNo6hFs2L55077WwhENX0I-BdG_cuIfHGEBKquw30VXq23anu3dnz0GblE04_21-EC5NIe7AMjz9nMw9D-XVv0LYJ94VMwuJfDqoUj9k384aDjNYupnwo6Wl-WRIaFpn4y"/>
+                <div class="overflow-hidden">
+                    <p class="font-data-point text-on-surface truncate">Alex Rivera</p>
+                    <p class="font-label-caps text-outline truncate text-[10px]" id="user-role">Senior Agronomist</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main class="ml-64 min-h-screen flex flex-col transition-all duration-300">
+        <!-- TopAppBar -->
+        <header class="flex justify-between items-center w-full px-md h-16 sticky top-0 z-50 bg-surface border-b border-outline-variant">
+            <div class="flex items-center gap-md flex-1">
+                <div class="relative w-full max-w-md">
+                    <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline text-body-md">search</span>
+                    <input id="search-input" class="w-full bg-surface-container border border-outline-variant rounded-xl py-2 pl-10 pr-4 text-on-surface focus:border-primary outline-none transition-all" placeholder="Search data, reports, or invoices..." type="text"/>
+                </div>
+            </div>
+            <div class="flex items-center gap-md">
+                <button id="lang-toggle-dash" class="bg-surface-container border border-outline-variant px-4 h-10 rounded-xl flex items-center hover:bg-surface-variant transition-all">
+                    <span class="font-label-caps text-xs" id="toggle-label-dash">العربية</span>
+                </button>
+                <button class="bg-primary text-on-primary px-md h-10 rounded-xl font-bold flex items-center gap-xs hover:brightness-110 active:scale-95 transition-all">
+                    <span class="material-symbols-outlined">add</span>
+                    <span id="btn-add-inv">Add New Invoice</span>
+                </button>
+                <div class="flex items-center gap-sm">
+                    <button class="w-10 h-10 flex items-center justify-center text-on-surface-variant hover:bg-surface-variant rounded-full transition-colors relative">
+                        <svg class="w-6 h-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"></path>
+                            <path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"></path>
+                        </svg>
+                        <span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+                    </button>
+                    <div class="h-8 w-[1px] bg-outline-variant mx-2"></div>
+                    <div class="flex items-center gap-xs">
+                        <span class="material-symbols-outlined text-brand-green">forest</span>
+                        <span class="font-headline-md font-bold text-brand-green">AGRI</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- Dashboard Content -->
+        <div class="p-md lg:p-lg space-y-md">
+            <!-- Metrics Row -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-md">
+                <div class="tonal-layer-1 p-md rounded-xl green-glow transition-all">
+                    <div class="flex justify-between items-start mb-sm">
+                        <p class="font-label-caps text-outline uppercase" id="metric-title-rev">Total Revenue</p>
+                        <span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-[12px]">trending_up</span> +5.2%
+                        </span>
+                    </div>
+                    <div class="flex items-baseline gap-xs">
+                        <p id="metric-revenue" class="font-display-lg text-on-surface">$128,430</p>
+                        <p class="font-label-caps text-outline" id="metric-unit-rev">USD</p>
+                    </div>
+                </div>
+                <div class="tonal-layer-1 p-md rounded-xl green-glow transition-all">
+                    <div class="flex justify-between items-start mb-sm">
+                        <p class="font-label-caps text-outline uppercase" id="metric-title-exp">Total Expenses</p>
+                        <span class="bg-error/10 text-error px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-[12px]">trending_down</span> +1.4%
+                        </span>
+                    </div>
+                    <div class="flex items-baseline gap-xs">
+                        <p id="metric-expenses" class="font-display-lg text-on-surface">$42,910</p>
+                        <p class="font-label-caps text-outline" id="metric-unit-exp">USD</p>
+                    </div>
+                </div>
+                <div class="tonal-layer-1 p-md rounded-xl green-glow transition-all">
+                    <div class="flex justify-between items-start mb-sm">
+                        <p class="font-label-caps text-outline uppercase" id="metric-title-prof">Net Profit</p>
+                        <span class="bg-primary/10 text-primary px-2 py-0.5 rounded text-[10px] font-bold flex items-center gap-xs">
+                            <span class="material-symbols-outlined text-[12px]">trending_up</span> +8.7%
+                        </span>
+                    </div>
+                    <div class="flex items-baseline gap-xs">
+                        <p id="metric-profit" class="font-display-lg text-on-surface">$85,520</p>
+                        <p class="font-label-caps text-outline" id="metric-unit-prof">USD</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Simulation -->
+            <div class="tonal-layer-1 p-md rounded-xl">
+                <div class="flex justify-between items-center mb-lg">
+                    <div>
+                        <h2 class="font-headline-md text-on-surface" id="chart-title">Monthly Crop Sales</h2>
+                        <p class="text-body-sm text-outline" id="chart-desc">Performance analysis across primary produce categories</p>
+                    </div>
+                </div>
+                <div class="relative h-[250px] w-full bg-surface-container-low rounded-xl border border-outline-variant/30 flex items-center justify-center overflow-hidden">
+                    <svg class="absolute inset-0 w-full h-full opacity-30" viewbox="0 0 1000 300">
+                        <path d="M0,250 Q100,220 200,240 T400,180 T600,210 T800,120 T1000,140" fill="none" stroke="#10B981" stroke-width="4"></path>
+                    </svg>
+                    <div class="z-10 bg-surface-container-high/80 px-md py-sm rounded-full border border-primary/20 flex items-center gap-sm">
+                        <span class="w-2 h-2 bg-primary rounded-full animate-pulse"></span>
+                        <span class="font-data-point text-primary" id="stream-status">Live Data Stream Active</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Invoices Table -->
+            <div class="tonal-layer-1 rounded-xl overflow-hidden">
+                <div class="p-md border-b border-outline-variant flex justify-between items-center bg-surface-container-low">
+                    <h2 class="font-headline-md text-on-surface" id="table-title">Recent Invoices</h2>
+                    <button class="text-primary font-bold hover:underline" id="table-viewall">View All</button>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-surface-container-high/50">
+                                <th class="px-md py-sm font-label-caps text-outline" id="th-date">Date</th>
+                                <th class="px-md py-sm font-label-caps text-outline" id="th-crop">Crop Name</th>
+                                <th class="px-md py-sm font-label-caps text-outline" id="th-weight">Net Weight</th>
+                                <th class="px-md py-sm font-label-caps text-outline" id="th-price">Total Price</th>
+                                <th class="px-md py-sm font-label-caps text-outline" id="th-status">Status</th>
+                                <th class="px-md py-sm font-label-caps text-outline"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="invoice-table-body" class="divide-y divide-outline-variant">
+                            <!-- JS injected rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Footer Metric Bar -->
+        <footer class="mt-auto border-t border-outline-variant bg-surface-container px-lg py-md flex justify-between items-center">
+            <div class="flex flex-wrap items-center gap-xl">
+                <div class="flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-primary">sensors</span>
+                    <div>
+                        <p class="font-label-caps text-[10px] text-outline uppercase" id="metric-footer-sensors">Active Sensors</p>
+                        <p id="metric-sensors" class="font-data-point text-on-surface">---</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-secondary">water_drop</span>
+                    <div>
+                        <p class="font-label-caps text-[10px] text-outline uppercase" id="metric-footer-moisture">Avg. Moisture</p>
+                        <p id="metric-moisture" class="font-data-point text-on-surface">---</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-sm">
+                    <span class="material-symbols-outlined text-tertiary">thermostat</span>
+                    <div>
+                        <p class="font-label-caps text-[10px] text-outline uppercase" id="metric-footer-temp">Field Temp</p>
+                        <p id="metric-temp" class="font-data-point text-on-surface">---</p>
+                    </div>
+                </div>
+            </div>
+            <div class="text-xs text-outline opacity-50">
+                © 2023 DOUMITT Precision Ag System v4.2
+            </div>
+        </footer>
+    </main>
+</section>
+
+<!-- Logic Entry -->
+<script type="module" src="/static/app.js"></script>
+
+</body>
+</html>
