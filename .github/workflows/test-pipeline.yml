@@ -25,7 +25,8 @@ jobs:
 
     - name: Run Tests (Pytest)
       env:
-        # سحب المفتاح السري بأمان من إعدادات المستودع
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
+        DATABASE_URL: "sqlite+aiosqlite:///./dummy.db"
+        REDIS_URL: "redis://localhost:6379"
       run: |
         pytest --cov=.
