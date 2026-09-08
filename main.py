@@ -1,3 +1,4 @@
+import sentry_sdk
 from fastapi import FastAPI, Depends, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.templating import Jinja2Templates
@@ -22,6 +23,13 @@ from fastapi_cache.backends.redis import RedisBackend
 from fastapi_cache.decorator import cache
 from redis import asyncio as aioredis
 
+# ==========================================
+# 🛡️ تهيئة Sentry لاصطياد الأخطاء
+# ==========================================
+sentry_sdk.init(
+    dsn="https://your_dummy_dsn_here@o0.ingest.sentry.io/0", # استبدله لاحقاً برابط DSN الحقيقي من حسابك
+    traces_sample_rate=1.0,
+)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -30,9 +38,7 @@ async def lifespan(app: FastAPI):
     yield
     # يمكن إضافة أوامر إغلاق الاتصالات لتنظيف الذاكرة هنا في المستقبل
 
-
 app = FastAPI(title="DOUMITT SaaS", lifespan=lifespan)
-
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,7 +47,6 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 
 @app.exception_handler(DoumittBaseException)
 async def doumitt_exception_handler(request: Request, exc: DoumittBaseException):
@@ -54,10 +59,8 @@ async def doumitt_exception_handler(request: Request, exc: DoumittBaseException)
         }
     )
 
-
 templates = Jinja2Templates(directory="templates")
 app.mount("/static", StaticFiles(directory="static"), name="static")
-
 
 async def get_db():
     async with SessionLocal() as db:
@@ -65,7 +68,6 @@ async def get_db():
             yield db
         finally:
             await db.close()
-
 
 # ==========================================
 # 🔐 نظام الحماية والتشفير (AUTH SYSTEM)
@@ -77,21 +79,17 @@ ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
 
-
 def verify_password(plain_password, hashed_password):
     return pwd_context.verify(plain_password, hashed_password)
 
-
 def get_password_hash(password):
     return pwd_context.hash(password)
-
 
 def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
     to_encode.update({"exp": expire})
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
-
 
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     credentials_exception = HTTPException(
@@ -113,7 +111,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     if user is None: raise credentials_exception
     return user
 
-
 async def get_current_admin(current_user: models.User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(
@@ -121,7 +118,6 @@ async def get_current_admin(current_user: models.User = Depends(get_current_user
             detail="عذراً، هذه الصلاحية مخصصة لمدراء النظام فقط"
         )
     return current_user
-
 
 # ==========================================
 # 🚪 مسارات تسجيل الدخول والاشتراك
@@ -143,7 +139,6 @@ async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db))
     await db.refresh(new_user)
     return {"message": "User created successfully"}
 
-
 @app.post("/api/login", response_model=schemas.Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
     query = select(models.User).where(models.User.username == form_data.username)
@@ -159,7 +154,6 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
 
-
 # ==========================================
 # 📊 مسارات الإدارة (محمية بـ Admin Role)
 # ==========================================
@@ -172,14 +166,12 @@ async def get_all_system_invoices(
     result = await db.execute(query)
     return result.scalars().all()
 
-
 # ==========================================
 # 📊 مسارات النظام (معزولة لكل مستخدم)
 # ==========================================
 @app.get("/")
 async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
-
 
 @app.post("/api/invoices", response_model=schemas.InvoiceResponse, status_code=status.HTTP_201_CREATED)
 async def add_invoice(invoice: schemas.InvoiceCreate, current_user: models.User = Depends(get_current_user),
@@ -203,10 +195,10 @@ async def add_invoice(invoice: schemas.InvoiceCreate, current_user: models.User 
         await FastAPICache.clear()
         return db_invoice
 
-    except Exception:
+    except Exception as e:
         await db.rollback()
+        sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail="تم فشل حفظ الفاتورة، تم التراجع عن العملية بأمان")
-
 
 @app.post("/api/invoices/bulk", response_model=List[schemas.InvoiceResponse], status_code=status.HTTP_201_CREATED)
 async def add_invoices_bulk(invoices: List[schemas.InvoiceCreate],
@@ -237,10 +229,10 @@ async def add_invoices_bulk(invoices: List[schemas.InvoiceCreate],
         await FastAPICache.clear()
         return db_invoices
 
-    except Exception:
+    except Exception as e:
         await db.rollback()
+        sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail="فشل الحفظ الجماعي، تم التراجع عن جميع الفواتير بأمان")
-
 
 @app.get("/api/invoices", response_model=List[schemas.InvoiceResponse])
 async def get_invoices(
@@ -260,7 +252,6 @@ async def get_invoices(
     result = await db.execute(query)
     return result.scalars().all()
 
-
 @app.post("/api/expenses", response_model=schemas.ExpenseResponse, status_code=status.HTTP_201_CREATED)
 async def add_expense(expense: schemas.ExpenseCreate, current_user: models.User = Depends(get_current_user),
                       db: AsyncSession = Depends(get_db)):
@@ -272,10 +263,10 @@ async def add_expense(expense: schemas.ExpenseCreate, current_user: models.User 
 
         await FastAPICache.clear()
         return db_expense
-    except Exception:
+    except Exception as e:
         await db.rollback()
+        sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail="فشل حفظ المصروف")
-
 
 @app.patch("/api/invoices/{invoice_id}")
 async def update_invoice(invoice_id: int, new_deductions: float, current_user: models.User = Depends(get_current_user),
@@ -295,10 +286,10 @@ async def update_invoice(invoice_id: int, new_deductions: float, current_user: m
 
         await FastAPICache.clear()
         return invoice
-    except Exception:
+    except Exception as e:
         await db.rollback()
+        sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail="فشل التعديل")
-
 
 @app.delete("/api/invoices/{invoice_id}")
 async def delete_single_invoice(invoice_id: int, current_user: models.User = Depends(get_current_user),
@@ -316,10 +307,10 @@ async def delete_single_invoice(invoice_id: int, current_user: models.User = Dep
 
         await FastAPICache.clear()
         return {"message": f"تم حذف الفاتورة رقم {invoice_id} بنجاح"}
-    except Exception:
+    except Exception as e:
         await db.rollback()
+        sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail="فشل الحذف")
-
 
 @app.get("/api/summary", response_model=schemas.SummaryResponse)
 @cache(expire=60)
@@ -335,7 +326,6 @@ async def get_summary(current_user: models.User = Depends(get_current_user), db:
 
     net_profit = total_income - total_expenses
     return schemas.SummaryResponse(total_income=total_income, total_expenses=total_expenses, net_profit=net_profit)
-
 
 @app.get("/api/reports/summary", response_model=schemas.ReportSummaryResponse)
 async def get_reports_summary(start_date: Optional[date] = None, end_date: Optional[date] = None,
@@ -362,7 +352,6 @@ async def get_reports_summary(start_date: Optional[date] = None, end_date: Optio
         total_weight=row.total_weight or 0.0 if row else 0.0
     )
 
-
 @app.get("/api/crops", response_model=list[str])
 @cache(expire=60 * 30)
 async def get_crops(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
@@ -370,7 +359,6 @@ async def get_crops(current_user: models.User = Depends(get_current_user), db: A
         models.Invoice.owner_id == current_user.id).distinct()
     result = await db.execute(query)
     return list(result.scalars().all())
-
 
 @app.get("/api/crops/{crop_name}/history", response_model=schemas.CropHistoryResponse)
 async def get_crop_history(crop_name: str, year: Optional[int] = None, skip: int = 0, limit: int = 50,
@@ -396,7 +384,6 @@ async def get_crop_history(crop_name: str, year: Optional[int] = None, skip: int
     return schemas.CropHistoryResponse(crop_name=crop_name, history=history_list, total_weight=total_w,
                                        total_revenue=total_r)
 
-
 @app.delete("/api/reset")
 async def reset_database(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     try:
@@ -414,6 +401,7 @@ async def reset_database(current_user: models.User = Depends(get_current_user), 
 
         await FastAPICache.clear()
         return {"message": "User specific data wiped"}
-    except Exception:
+    except Exception as e:
         await db.rollback()
+        sentry_sdk.capture_exception(e)
         raise HTTPException(status_code=500, detail="فشل تصفير الحساب")
