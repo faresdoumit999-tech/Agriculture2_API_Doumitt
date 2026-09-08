@@ -7,16 +7,32 @@ from typing import List, Optional
 from datetime import datetime, timedelta, timezone, date
 from passlib.context import CryptContext
 from jose import JWTError, jwt
-from fastapi.staticfiles import StaticFiles  # ضفنا هي الكلمة هون
+from fastapi.staticfiles import StaticFiles
+from contextlib import asynccontextmanager
 import models, schemas
+from config import settings
 from database import SessionLocal, engine
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
 from fastapi.responses import JSONResponse
 from exceptions import DoumittBaseException, UserAlreadyExistsError, InvoiceNotFoundError
 from sqlalchemy.orm import selectinload
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.redis import RedisBackend
+from fastapi_cache.decorator import cache
+from redis import asyncio as aioredis
 
-app = FastAPI(title="DOUMITT SaaS")
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    redis = aioredis.from_url(settings.redis_url, encoding="utf8", decode_responses=True)
+    FastAPICache.init(RedisBackend(redis), prefix="doumitt-cache")
+    yield
+    # يمكن إضافة أوامر إغلاق الاتصالات لتنظيف الذاكرة هنا في المستقبل
+
+
+app = FastAPI(title="DOUMITT SaaS", lifespan=lifespan)
+
 
 app.add_middleware(
     CORSMiddleware,
@@ -25,12 +41,10 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
 @app.exception_handler(DoumittBaseException)
 async def doumitt_exception_handler(request: Request, exc: DoumittBaseException):
-    """
-    هذا المعالج سيلتقط أي خطأ يورث من DoumittBaseException
-    ويقوم بتغليفه في رد JSON احترافي موحد.
-    """
     return JSONResponse(
         status_code=exc.status_code,
         content={
@@ -39,8 +53,10 @@ async def doumitt_exception_handler(request: Request, exc: DoumittBaseException)
             "path": request.url.path
         }
     )
+
+
 templates = Jinja2Templates(directory="templates")
-app.mount("/static", StaticFiles(directory="static"), name="static") # 👈 ضيف هاد السطر
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 async def get_db():
@@ -54,9 +70,9 @@ async def get_db():
 # ==========================================
 # 🔐 نظام الحماية والتشفير (AUTH SYSTEM)
 # ==========================================
-SECRET_KEY = "doumitt_super_secret_key_production"
+SECRET_KEY = settings.secret_key
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7  # أسبوع كامل
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/login")
@@ -77,7 +93,6 @@ def create_access_token(data: dict):
     return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
 
 
-# 🌟 تحويل التحقق من المستخدم لـ Async
 async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
@@ -91,7 +106,6 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     except JWTError:
         raise credentials_exception
 
-    # البحث بالطريقة الصاروخية
     query = select(models.User).where(models.User.username == username)
     result = await db.execute(query)
     user = result.scalars().first()
@@ -100,26 +114,33 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     return user
 
 
+async def get_current_admin(current_user: models.User = Depends(get_current_user)):
+    if current_user.role != "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="عذراً، هذه الصلاحية مخصصة لمدراء النظام فقط"
+        )
+    return current_user
+
+
 # ==========================================
 # 🚪 مسارات تسجيل الدخول والاشتراك
 # ==========================================
-@app.post("/api/register")
+@app.post("/api/register", status_code=status.HTTP_201_CREATED)
 async def register(user: schemas.UserCreate, db: AsyncSession = Depends(get_db)):
     query = select(models.User).where(models.User.username == user.username)
     result = await db.execute(query)
     existing_user = result.scalars().first()
 
     if existing_user:
-        # هنا السيرفر يتحدث بلغة المشروع ويرمي الخطأ المخصص
-        raise UserAlreadyExistsError(username=user.username)
+        raise UserAlreadyExistsError()
 
     hashed_password = get_password_hash(user.password)
     new_user = models.User(username=user.username, hashed_password=hashed_password)
 
-    db.add(new_user)  # add ما بتحتاج await لأنها بتتم بالذاكرة المحلية
+    db.add(new_user)
     await db.commit()
     await db.refresh(new_user)
-
     return {"message": "User created successfully"}
 
 
@@ -135,9 +156,21 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSessi
             detail="Incorrect username or password",
             headers={"WWW-Authenticate": "Bearer"},
         )
-
     access_token = create_access_token(data={"sub": user.username})
     return {"access_token": access_token, "token_type": "bearer"}
+
+
+# ==========================================
+# 📊 مسارات الإدارة (محمية بـ Admin Role)
+# ==========================================
+@app.get("/api/admin/all_invoices", response_model=List[schemas.InvoiceResponse])
+async def get_all_system_invoices(
+        admin_user: models.User = Depends(get_current_admin),
+        db: AsyncSession = Depends(get_db)
+):
+    query = select(models.Invoice).options(selectinload(models.Invoice.items)).order_by(models.Invoice.date.desc())
+    result = await db.execute(query)
+    return result.scalars().all()
 
 
 # ==========================================
@@ -148,86 +181,153 @@ async def index(request: Request):
     return templates.TemplateResponse(request=request, name="index.html")
 
 
-@app.post("/api/invoices", response_model=schemas.InvoiceResponse)
+@app.post("/api/invoices", response_model=schemas.InvoiceResponse, status_code=status.HTTP_201_CREATED)
 async def add_invoice(invoice: schemas.InvoiceCreate, current_user: models.User = Depends(get_current_user),
                       db: AsyncSession = Depends(get_db)):
-    db_invoice = models.Invoice(date=invoice.date, total_gross=invoice.total_gross, deductions=invoice.deductions,
-                                net_total=invoice.net_total, owner_id=current_user.id)
-    db.add(db_invoice)
-    await db.commit()
-    await db.refresh(db_invoice)
-
-    for item in invoice.items:
-        db_item = models.InvoiceItem(**item.dict(), invoice_id=db_invoice.id)
-        db.add(db_item)
-    await db.commit()
-    await db.refresh(db_invoice)
-    return db_invoice
-
-
-@app.post("/api/invoices/bulk", response_model=List[schemas.InvoiceResponse])
-async def add_invoices_bulk(invoices: List[schemas.InvoiceCreate],
-                            current_user: models.User = Depends(get_current_user),
-                            db: AsyncSession = Depends(get_db)):
-    db_invoices = []
-    for invoice in invoices:
-        db_invoice = models.Invoice(date=invoice.date, total_gross=invoice.total_gross, deductions=invoice.deductions,
-                                    net_total=invoice.net_total, owner_id=current_user.id)
+    db_invoice = models.Invoice(
+        **invoice.model_dump(exclude={"items"}),
+        owner_id=current_user.id
+    )
+    try:
         db.add(db_invoice)
-        await db.flush()  # Flush بيحتاج await بالنظام الجديد
+        await db.flush()
+
         for item in invoice.items:
-            db_item = models.InvoiceItem(**item.dict(), invoice_id=db_invoice.id)
+            db_item = models.InvoiceItem(**item.model_dump(), invoice_id=db_invoice.id)
             db.add(db_item)
-        db_invoices.append(db_invoice)
-    await db.commit()
-    for inv in db_invoices:
-        await db.refresh(inv)
-    return db_invoices
+
+        await db.commit()
+        await db.refresh(db_invoice)
+
+        # Invalidation للكاش بعد إضافة فاتورة
+        await FastAPICache.clear()
+        return db_invoice
+
+    except Exception:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="تم فشل حفظ الفاتورة، تم التراجع عن العملية بأمان")
+
+
+@app.post("/api/invoices/bulk", response_model=List[schemas.InvoiceResponse], status_code=status.HTTP_201_CREATED)
+async def add_invoices_bulk(invoices: List[schemas.InvoiceCreate],
+                            current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    db_invoices = []
+    try:
+        for invoice in invoices:
+            # 1. تحديث الفاتورة الأساسية
+            db_invoice = models.Invoice(
+                **invoice.model_dump(exclude={"items"}),
+                owner_id=current_user.id
+            )
+            db.add(db_invoice)
+            await db.flush()
+
+            for item in invoice.items:
+                # 2. تحديث صنف المحصول (استبدال dict القديمة)
+                db_item = models.InvoiceItem(**item.model_dump(), invoice_id=db_invoice.id)
+                db.add(db_item)
+
+            db_invoices.append(db_invoice)
+
+        await db.commit()
+
+        for inv in db_invoices:
+            await db.refresh(inv)
+
+        await FastAPICache.clear()
+        return db_invoices
+
+    except Exception:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="فشل الحفظ الجماعي، تم التراجع عن جميع الفواتير بأمان")
 
 
 @app.get("/api/invoices", response_model=List[schemas.InvoiceResponse])
 async def get_invoices(
-        skip: int = 0,  # التجاوز (Offset) - الافتراضي 0
-        limit: int = 20,  # الحد الأقصى (Limit) - الافتراضي 20
+        skip: int = 0,
+        limit: int = 20,
         current_user: models.User = Depends(get_current_user),
         db: AsyncSession = Depends(get_db)
 ):
-    """
-    مسار جلب فواتير المزارع مع ميزة تقسيم الصفحات (Pagination)
-    وجلب العناصر المرتبطة (Items) بشكل آمن ومتزامن.
-    """
     query = (
         select(models.Invoice)
         .where(models.Invoice.owner_id == current_user.id)
-        .options(selectinload(models.Invoice.items))  # 🌟 السر المعماري لتجنب أخطاء الـ Async
-        .order_by(models.Invoice.date.desc())  # ترتيب من الأحدث للأقدم
-        .offset(skip)  # تطبيق التجاوز
-        .limit(limit)  # تطبيق الحد الأقصى
+        .options(selectinload(models.Invoice.items))
+        .order_by(models.Invoice.date.desc())
+        .offset(skip)
+        .limit(limit)
     )
-
     result = await db.execute(query)
-    invoices = result.scalars().all()
+    return result.scalars().all()
 
-    return invoices
 
-@app.post("/api/expenses", response_model=schemas.ExpenseResponse)
+@app.post("/api/expenses", response_model=schemas.ExpenseResponse, status_code=status.HTTP_201_CREATED)
 async def add_expense(expense: schemas.ExpenseCreate, current_user: models.User = Depends(get_current_user),
                       db: AsyncSession = Depends(get_db)):
-    db_expense = models.ExpenseRecord(**expense.dict(), owner_id=current_user.id)
-    db.add(db_expense)
-    await db.commit()
-    await db.refresh(db_expense)
-    return db_expense
+    try:
+        db_expense = models.ExpenseRecord(**expense.dict(), owner_id=current_user.id)
+        db.add(db_expense)
+        await db.commit()
+        await db.refresh(db_expense)
+
+        await FastAPICache.clear()
+        return db_expense
+    except Exception:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="فشل حفظ المصروف")
+
+
+@app.patch("/api/invoices/{invoice_id}")
+async def update_invoice(invoice_id: int, new_deductions: float, current_user: models.User = Depends(get_current_user),
+                         db: AsyncSession = Depends(get_db)):
+    query = select(models.Invoice).where(models.Invoice.id == invoice_id, models.Invoice.owner_id == current_user.id)
+    result = await db.execute(query)
+    invoice = result.scalars().first()
+
+    if not invoice:
+        raise InvoiceNotFoundError()
+
+    try:
+        invoice.deductions = new_deductions
+        invoice.net_total = invoice.total_gross - new_deductions
+        await db.commit()
+        await db.refresh(invoice)
+
+        await FastAPICache.clear()
+        return invoice
+    except Exception:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="فشل التعديل")
+
+
+@app.delete("/api/invoices/{invoice_id}")
+async def delete_single_invoice(invoice_id: int, current_user: models.User = Depends(get_current_user),
+                                db: AsyncSession = Depends(get_db)):
+    query = select(models.Invoice).where(models.Invoice.id == invoice_id, models.Invoice.owner_id == current_user.id)
+    result = await db.execute(query)
+    invoice = result.scalars().first()
+
+    if not invoice:
+        raise InvoiceNotFoundError()
+
+    try:
+        await db.delete(invoice)
+        await db.commit()
+
+        await FastAPICache.clear()
+        return {"message": f"تم حذف الفاتورة رقم {invoice_id} بنجاح"}
+    except Exception:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="فشل الحذف")
 
 
 @app.get("/api/summary", response_model=schemas.SummaryResponse)
+@cache(expire=60)
 async def get_summary(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    # جلب الدخل
     income_query = select(func.sum(models.Invoice.net_total)).where(models.Invoice.owner_id == current_user.id)
     income_result = await db.execute(income_query)
     total_income = income_result.scalar() or 0.0
 
-    # جلب المصاريف
     expenses_query = select(func.sum(models.ExpenseRecord.amount)).where(
         models.ExpenseRecord.owner_id == current_user.id)
     expenses_result = await db.execute(expenses_query)
@@ -264,26 +364,26 @@ async def get_reports_summary(start_date: Optional[date] = None, end_date: Optio
 
 
 @app.get("/api/crops", response_model=list[str])
+@cache(expire=60 * 30)
 async def get_crops(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     query = select(models.InvoiceItem.crop_name).join(models.Invoice).where(
         models.Invoice.owner_id == current_user.id).distinct()
     result = await db.execute(query)
-    crops = result.scalars().all()
-    return list(crops)
+    return list(result.scalars().all())
 
 
 @app.get("/api/crops/{crop_name}/history", response_model=schemas.CropHistoryResponse)
-async def get_crop_history(crop_name: str, year: Optional[int] = None,
-                           current_user: models.User = Depends(get_current_user),
-                           db: AsyncSession = Depends(get_db)):
+async def get_crop_history(crop_name: str, year: Optional[int] = None, skip: int = 0, limit: int = 50,
+                           current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     query = select(models.InvoiceItem, models.Invoice.date).join(models.Invoice).where(
         models.InvoiceItem.crop_name == crop_name, models.Invoice.owner_id == current_user.id)
 
     if year: query = query.where(extract('year', models.Invoice.date) == year)
-    query = query.order_by(models.Invoice.date.desc())
+
+    query = query.order_by(models.Invoice.date.desc()).offset(skip).limit(limit)
 
     result = await db.execute(query)
-    items = result.all()  # بيرجع قائمة من الـ Tuples (InvoiceItem, date)
+    items = result.all()
 
     history_list, total_w, total_r = [], 0.0, 0.0
     for item, inv_date in items:
@@ -299,17 +399,21 @@ async def get_crop_history(crop_name: str, year: Optional[int] = None,
 
 @app.delete("/api/reset")
 async def reset_database(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    # حذف الفواتير بالطريقة الصاروخية
-    query = select(models.Invoice).where(models.Invoice.owner_id == current_user.id)
-    result = await db.execute(query)
-    invoices = result.scalars().all()
+    try:
+        query = select(models.Invoice).where(models.Invoice.owner_id == current_user.id)
+        result = await db.execute(query)
+        invoices = result.scalars().all()
 
-    for inv in invoices:
-        await db.delete(inv)
+        for inv in invoices:
+            await db.delete(inv)
 
-        # حذف المصاريف بضربة وحدة
-    stmt = delete(models.ExpenseRecord).where(models.ExpenseRecord.owner_id == current_user.id)
-    await db.execute(stmt)
+        stmt = delete(models.ExpenseRecord).where(models.ExpenseRecord.owner_id == current_user.id)
+        await db.execute(stmt)
 
-    await db.commit()
-    return {"message": "User specific data wiped"}
+        await db.commit()
+
+        await FastAPICache.clear()
+        return {"message": "User specific data wiped"}
+    except Exception:
+        await db.rollback()
+        raise HTTPException(status_code=500, detail="فشل تصفير الحساب")

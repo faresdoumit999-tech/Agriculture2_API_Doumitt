@@ -1,7 +1,24 @@
-../.venv/
+# الملفات الحساسة وقواعد البيانات
+.env
+*.db
+*.sqlite3
+
+# البيئة الوهمية
+.venv/
+venv/
+env/
+
+# ملفات بايثون المؤقتة والكاش
 __pycache__/
 *.pyc
-.env
+*.pyo
+*.pyd
+
+# ملفات الاختبارات والتغطية (Pytest & Coverage)
+.pytest_cache/
+.coverage
+htmlcov/
+
+# إعدادات محررات الأكواد
+.idea/
 .vscode/
-*.db
-.venv/

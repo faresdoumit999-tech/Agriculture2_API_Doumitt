@@ -3,53 +3,54 @@ import pytest_asyncio
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
+from fastapi_cache import FastAPICache
+from fastapi_cache.backends.inmemory import InMemoryBackend
 
-# استيراد ملفات مشروعك
 from main import app, get_db
 from models import Base
 
-# 1. إنشاء رابط لقاعدة بيانات وهمية (SQLite سريعة للـ Testing)
-SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///./test_doumitt.db"
+# 1. إنشاء رابط لقاعدة بيانات وهمية (تعمل بالـ RAM حصراً)
+SQLALCHEMY_DATABASE_URL = "sqlite+aiosqlite:///:memory:"
 
-# إعداد المحرك الوهمي
 engine = create_async_engine(
     SQLALCHEMY_DATABASE_URL,
-    connect_args={"check_same_thread": False}  # ضرورية لـ SQLite
+    connect_args={"check_same_thread": False}
 )
 
 TestingSessionLocal = sessionmaker(
     autocommit=False, autoflush=False, bind=engine, class_=AsyncSession
 )
 
-
-# 2. Fixture لتجهيز الجداول قبل كل اختبار ومسحها بعده
 @pytest_asyncio.fixture(scope="function")
 async def db_session():
-    # إنشاء الجداول الوهمية
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
 
-    # فتح جلسة اتصال
     async with TestingSessionLocal() as session:
-        yield session  # تسليم الجلسة لدالة الاختبار
+        yield session
 
-    # مسح الجداول بعد انتهاء الاختبار لتنظيف البيئة
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
-
-# 3. Fixture المتصفح الوهمي (TestClient) + تبديل الداتا بيز
 @pytest_asyncio.fixture(scope="function")
 async def client(db_session):
-    # دالة لخداع السيرفر ليستخدم الداتا بيز الوهمية
     async def override_get_db():
         yield db_session
 
     app.dependency_overrides[get_db] = override_get_db
 
-    # تشغيل المتصفح الوهمي السريع
+    # تجاوز Redis الفعلي واستخدام كاش وهمي
+    FastAPICache.init(InMemoryBackend(), prefix="test-cache")
+
     async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as ac:
         yield ac
 
-    # إرجاع السيرفر لحالته الطبيعية بعد الاختبار
     app.dependency_overrides.clear()
+
+# 3. الأداة الجديدة: إنشاء مستخدم وتسجيل دخوله تلقائياً لإرجاع التوكن
+@pytest_asyncio.fixture(scope="function")
+async def logged_in_token(client):
+    user_data = {"username": "tester_pro", "password": "strongpassword123"}
+    await client.post("/api/register", json=user_data)
+    response = await client.post("/api/login", data=user_data)
+    return response.json()["access_token"]

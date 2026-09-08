@@ -27,7 +27,12 @@ services:
       - .:/app  # 🪄 سحر الـ Live Reload: نربط مجلد اللابتوب بالحاوية لتحديث الكود فوراً
     env_file:
       - .env
-
+  redis:
+    image: redis:alpine
+    container_name: doumitt_redis
+    ports:
+      - "6379:6379"
+    restart: always
 # تعريف المساحة التخزينية لقاعدة البيانات
 volumes:
   postgres_data:

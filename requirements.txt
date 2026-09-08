@@ -12,3 +12,6 @@ pytest
 httpx
 alembic
 asyncpg
+pydantic-settings
+redis
+fastapi-cache2[redis]
