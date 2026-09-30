@@ -32,8 +32,12 @@ async def db_session():
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.drop_all)
 
+
 @pytest_asyncio.fixture(scope="function")
 async def client(db_session):
+    # 1. إيقاف الحماية من هجمات التخمين هنا لضمان تطبيقها فعلياً!
+    app.state.limiter.enabled = False
+
     async def override_get_db():
         yield db_session
 
@@ -46,8 +50,8 @@ async def client(db_session):
         yield ac
 
     app.dependency_overrides.clear()
-
-# 3. الأداة الجديدة: إنشاء مستخدم وتسجيل دخوله تلقائياً لإرجاع التوكن
+    # إعادة تشغيل الحماية بعد انتهاء الاختبار (اختياري ولكن يفضل للحفاظ على نظافة البيئة)
+    app.state.limiter.enabled = True
 @pytest_asyncio.fixture(scope="function")
 async def logged_in_token(client):
     user_data = {"username": "tester_pro", "password": "strongpassword123"}
