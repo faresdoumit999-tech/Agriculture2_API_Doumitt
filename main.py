@@ -42,15 +42,27 @@ sentry_sdk.init(
     traces_sample_rate=1.0,
 )
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 🌟 التعديل السحري: توجيه الأمر لإنشاء الجداول في Neon إذا لم تكن موجودة
-    async with engine.begin() as conn:
-        await conn.run_sync(models.Base.metadata.create_all)
+    # 1. محاولة الاتصال بقاعدة البيانات وبناء الجداول مع حاجز أمان
+    try:
+        async with engine.begin() as conn:
+            await conn.run_sync(models.Base.metadata.create_all)
+        print("✅ Database tables created successfully.")
+    except Exception as e:
+        print(f"❌ DB init failed: {e!r}")
+        sentry_sdk.capture_exception(e)
 
-    # تشغيل الكاش (Redis) كما كان
-    redis = aioredis.from_url(settings.redis_url, encoding="utf8", decode_responses=True)
-    FastAPICache.init(RedisBackend(redis), prefix="doumitt-cache")
+    # 2. تهيئة الكاش (Redis) مع حاجز أمان
+    try:
+        redis = aioredis.from_url(settings.redis_url, encoding="utf8", decode_responses=True)
+        FastAPICache.init(RedisBackend(redis), prefix="doumitt-cache")
+        print("✅ Redis cache initialized.")
+    except Exception as e:
+        print(f"❌ Redis init failed: {e!r}")
+        sentry_sdk.capture_exception(e)
+
     yield
 
 app = FastAPI(title="DOUMITT SaaS", lifespan=lifespan)
