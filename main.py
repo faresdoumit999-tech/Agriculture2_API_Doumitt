@@ -23,7 +23,7 @@ from slowapi.errors import RateLimitExceeded
 
 import models, schemas
 from config import settings
-from database import get_db
+from database import get_db,engine
 from exceptions import DoumittBaseException, UserAlreadyExistsError
 from auth import (
     verify_password,
@@ -44,6 +44,11 @@ sentry_sdk.init(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    # 🌟 التعديل السحري: توجيه الأمر لإنشاء الجداول في Neon إذا لم تكن موجودة
+    async with engine.begin() as conn:
+        await conn.run_sync(models.Base.metadata.create_all)
+
+    # تشغيل الكاش (Redis) كما كان
     redis = aioredis.from_url(settings.redis_url, encoding="utf8", decode_responses=True)
     FastAPICache.init(RedisBackend(redis), prefix="doumitt-cache")
     yield
