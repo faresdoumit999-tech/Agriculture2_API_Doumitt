@@ -1,20 +1,24 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker, declarative_base
-# 🌟 التعديل السحري: استبدلنا os و dotenv بـ "وزير الخارجية" تبعنا
 from config import settings
 
-# نجلب الرابط المركزي الآمن المفحوص بواسطة Pydantic Settings
 SQLALCHEMY_DATABASE_URL = settings.database_url
 
-# 🌟 الخدعة الهندسية تبعك بنخليها متل ما هي!
-# مشان تضل تحميك لو الدوكر بعت الرابط القديم، بس هالمرة عم نطبقها على متغير الـ settings
 if SQLALCHEMY_DATABASE_URL and SQLALCHEMY_DATABASE_URL.startswith("postgresql://"):
     SQLALCHEMY_DATABASE_URL = SQLALCHEMY_DATABASE_URL.replace("postgresql://", "postgresql+asyncpg://")
 
-# 1. إنشاء المحرك غير المتزامن (الصاروخ)
-engine = create_async_engine(SQLALCHEMY_DATABASE_URL, echo=True)
+# تفعيل التشفير القياسي إذا كنا نتصل بسيرفرات Neon (بدون إخفاء الـ SNI)
+connect_args = {}
+if SQLALCHEMY_DATABASE_URL and "neon.tech" in SQLALCHEMY_DATABASE_URL:
+    # استخدام "require" يخبر asyncpg بتفعيل التشفير بأمان بدون تعقيدات شهادات الويندوز
+    connect_args = {"ssl": "require"}
 
-# 2. إنشاء الجلسة غير المتزامنة (AsyncSession)
+engine = create_async_engine(
+    SQLALCHEMY_DATABASE_URL,
+    echo=True,
+    connect_args=connect_args
+)
+
 SessionLocal = sessionmaker(
     bind=engine,
     class_=AsyncSession,
@@ -23,7 +27,6 @@ SessionLocal = sessionmaker(
 
 Base = declarative_base()
 
-# 3. دالة جلب قاعدة البيانات (صارت async واحترافية)
 async def get_db():
     async with SessionLocal() as session:
         yield session

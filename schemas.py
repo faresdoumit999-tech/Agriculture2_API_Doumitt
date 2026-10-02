@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, ConfigDict
 
 class UserCreate(BaseModel):
     username: str
-    password: str = Field(min_length=8, description="يجب ألا تقل كلمة المرور عن 8 أحرف")
+    password: str = Field(min_length=8, max_length=72,description="يجب ألا تقل كلمة المرور عن 8 أحرف")
 
 
 class Token(BaseModel):
