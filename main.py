@@ -243,7 +243,14 @@ async def get_crop_history(crop_name: str, year: Optional[int] = None, skip: int
 
     return schemas.CropHistoryResponse(crop_name=crop_name, history=history_list, total_weight=total_w,
                                        total_revenue=total_r)
-
+@app.get("/api/me")
+async def get_my_profile(current_user: models.User = Depends(get_current_user)):
+    # إذا وصل الكود إلى هذا السطر، فهذا يعني أن نقطة التفتيش سمحت له بالمرور!
+    return {
+        "message": "مرحباً بك! لقد مررت بنجاح لأنك تحمل توكن صالح.",
+        "username": current_user.username,
+        "is_admin": current_user.role == "admin"
+    }
 @app.delete("/api/reset")
 async def reset_database(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     try:
