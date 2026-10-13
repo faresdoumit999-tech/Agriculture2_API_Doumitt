@@ -11,7 +11,6 @@
 
     <script>
         tailwind.config = {
-// ... وباقي الكود بتتركه متل ما هو تحت
             theme: {
                 extend: {
                     colors: { agri: { light: '#eefcf1', base: '#22c55e', dark: '#166534' } },
@@ -135,13 +134,10 @@
     <script>
         let API_BASE = '';
 
-        // الواجهة تسأل المتصفح: هل أنا أعمل على اللابتوب المحلي؟
         if (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1') {
-            // إذا كان الجواب نعم، استخدم سيرفر اللابتوب
             API_BASE = 'http://localhost:8000/api';
             console.log("🟢 Running in LOCAL mode");
         } else {
-            // إذا كان الجواب لا (بمعنى أن المزارع فتح الموقع من الإنترنت)، استخدم السيرفر السحابي الحالي عبر مسار نسبي
             API_BASE = '/api';
             console.log("☁️ Running in PRODUCTION mode");
         }
@@ -180,31 +176,56 @@
             location.reload();
         }
 
+        // الكود المحدث للتعامل مع إنشاء الحساب والدخول التلقائي
         document.getElementById('authForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const u = document.getElementById('auth_username').value;
             const p = document.getElementById('auth_password').value;
 
             try {
-                let res;
-                if (isLoginMode) {
-                    const formData = new URLSearchParams();
-                    formData.append('username', u); formData.append('password', p);
-                    res = await fetch(`${API_BASE}/login`, { method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' }, body: formData });
-                } else {
-                    res = await fetch(`${API_BASE}/register`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({username: u, password: p}) });
+                // 1. إذا كان المستخدم في واجهة "إنشاء حساب"
+                if (!isLoginMode) {
+                    const regRes = await fetch(`${API_BASE}/register`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({username: u, password: p})
+                    });
+
+                    if (!regRes.ok) {
+                        if (regRes.status === 422) {
+                            alert("عذراً، يجب ألا تقل كلمة المرور عن 8 أحرف");
+                        } else if (regRes.status === 400) {
+                            alert("اسم المستخدم محجوز مسبقاً، اختر اسماً آخر");
+                        } else {
+                            alert("حدث خطأ أثناء إنشاء الحساب");
+                        }
+                        return; // إيقاف التنفيذ هنا وعدم إكمال الدخول
+                    }
                 }
 
-                if (res.ok) {
-                    const data = await res.json();
+                // 2. تسجيل الدخول
+                const formData = new URLSearchParams();
+                formData.append('username', u);
+                formData.append('password', p);
+
+                const loginRes = await fetch(`${API_BASE}/login`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body: formData
+                });
+
+                if (loginRes.ok) {
+                    const data = await loginRes.json();
                     localStorage.setItem('doumitt_token', data.access_token);
                     localStorage.setItem('doumitt_user', u);
                     checkAuth();
                 } else {
-                    const error = await res.json();
-                    alert(error.detail || "حدث خطأ في العملية");
+                    alert("اسم المستخدم أو كلمة المرور غير صحيحة");
                 }
-            } catch (err) { alert("تعذر الاتصال بالسيرفر"); }
+
+            } catch (err) {
+                alert("تعذر الاتصال بالسيرفر، تأكد من تشغيل Docker أو اتصالك بالإنترنت");
+            }
         });
 
         // 🛡️ الداله الذكية التي تمرر الـ Token مع كل طلب
@@ -220,7 +241,7 @@
         }
 
         // ==========================================
-        // باقي عمليات التطبيق باستخدام apiFetch بدل fetch
+        // باقي عمليات التطبيق
         // ==========================================
         let globalCrops = [], itemIndex = 0, draftInvoices = [], currentModalCrop = '';
 
@@ -281,7 +302,6 @@
             } catch(e) {}
         });
 
-        // --- دالة الإكسل المحسنة للتواريخ السورية ---
         function parseNum(val) { let n = parseFloat(String(val).replace(/[^\d.-]/g, '')); return isNaN(n) ? 0 : n; }
         function extractSyrianDate(val) {
             if (!val) return null; let d, m, y;
@@ -412,7 +432,6 @@
             }
         }
 
-        // تشغيل التحقق من تسجيل الدخول عند تحميل الصفحة
         checkAuth();
     </script>
 </body>

@@ -1,38 +1,55 @@
-version: '3.8'
-
 services:
-  # 🗄️ الحاوية الأولى: قاعدة البيانات (الملعب المحلي)
+  # 🗄️ الحاوية الأولى: قاعدة البيانات (معزولة في الشبكة الداخلية)
   db:
-    image: postgres:15-alpine  # نستخدم نسخة خفيفة وسريعة من بوستجري
+    image: postgres:15-alpine
     container_name: agriculture_local_db
     environment:
       - POSTGRES_USER=admin
       - POSTGRES_PASSWORD=secret123
       - POSTGRES_DB=agriculture_dev
-    ports:
-      - "5433:5432"
+    # ❌ قمنا بإزالة ports لكي لا تنكشف للإنترنت
+    # ✅ نستخدم expose لفتح المنفذ لحاويات الشبكة الداخلية فقط
+    expose:
+      - "5432"
+    networks:
+      - doumitt_internal
     volumes:
-      - postgres_data:/var/lib/postgresql/data # لحفظ البيانات حتى لو طفينا الحاوية
+      - postgres_data:/var/lib/postgresql/data
 
-  # 🚀 الحاوية الثانية: سيرفر الباك إند (كودك)
+  # 🚀 الحاوية الثانية: سيرفر الباك إند (الواجهة المكشوفة الوحيدة)
   web:
-    build: .  # ابني الحاوية من ملف الـ Dockerfile الموجود بنفس المجلد
+    build: .
     container_name: agriculture_fastapi
-    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload # السحر هنا: فعلنا ميزة التحديث التلقائي
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     ports:
-      - "8000:8000"
+      - "8000:8000" # ✅ السيرفر الوحيد المتصل بالعالم الخارجي
     depends_on:
-      - db  # لا تشغل كود البايثون إلا بعد ما تجهز قاعدة البيانات
+      - db
+      - redis # أضفنا الاعتماد على Redis
+    networks:
+      - doumitt_internal
     volumes:
-      - .:/app  # 🪄 سحر الـ Live Reload: نربط مجلد اللابتوب بالحاوية لتحديث الكود فوراً
+      - .:/app
     env_file:
       - .env
+
+  # 🧠 الحاوية الثالثة: الذاكرة المؤقتة (معزولة في الشبكة الداخلية)
   redis:
     image: redis:alpine
     container_name: doumitt_redis
-    ports:
-      - "6379:6379"
+    # ❌ قمنا بإزالة ports
+    # ✅ نستخدم expose
+    expose:
+      - "6379"
     restart: always
+    networks:
+      - doumitt_internal
+
+# 🛡️ تعريف الشبكة الداخلية المعزولة
+networks:
+  doumitt_internal:
+    driver: bridge
+
 # تعريف المساحة التخزينية لقاعدة البيانات
 volumes:
   postgres_data:

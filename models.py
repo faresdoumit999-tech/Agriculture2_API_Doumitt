@@ -7,6 +7,7 @@ class User(Base):
     __tablename__ = "users"
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True)
+    phone_number = Column(String, nullable=True)  # 👈 الحقل الجديد
     hashed_password = Column(String)
     role = Column(String, default="farmer")
 

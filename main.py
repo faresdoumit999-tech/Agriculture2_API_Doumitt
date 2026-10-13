@@ -1,4 +1,3 @@
-# main.py
 import sentry_sdk
 from fastapi import FastAPI, Depends, Request, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
@@ -45,16 +44,10 @@ sentry_sdk.init(
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # 1. محاولة الاتصال بقاعدة البيانات وبناء الجداول مع حاجز أمان
-    try:
-        async with engine.begin() as conn:
-            await conn.run_sync(models.Base.metadata.create_all)
-        print("✅ Database tables created successfully.")
-    except Exception as e:
-        print(f"❌ DB init failed: {e!r}")
-        sentry_sdk.capture_exception(e)
+    # ❌ قمنا بإلغاء بناء الجداول التلقائي لأن Alembic هو المسؤول عنها الآن
+    # لم نعد بحاجة لهذا الجزء، سيتم إنشاء الجداول عبر أوامر الهجرة (Migrations)
 
-    # 2. تهيئة الكاش (Redis) مع حاجز أمان
+    # 2. تهيئة الكاش (Redis) مع حاجز أمان (هذا الجزء يبقى كما هو وضروري جداً)
     try:
         redis = aioredis.from_url(settings.redis_url, encoding="utf8", decode_responses=True)
         FastAPICache.init(RedisBackend(redis), prefix="doumitt-cache")
@@ -64,20 +57,21 @@ async def lifespan(app: FastAPI):
         sentry_sdk.capture_exception(e)
 
     yield
-
 app = FastAPI(title="DOUMITT SaaS", lifespan=lifespan)
+
+# 🛡️ إعدادات Rate Limiting
 limiter = Limiter(key_func=get_remote_address)
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# 🛡️ إعدادات CORS الاحترافية (تُقرأ من ملف البيئة لتجنب الهارد كود)
+# نستخدم getattr للحماية في حال نسينا إضافة المتغير في config.py
+origins_str = getattr(settings, "allowed_origins", "http://localhost:8000,http://127.0.0.1:8000")
+origins_list = [origin.strip() for origin in origins_str.split(",")]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://www.doumitt-app.com",
-        "http://localhost:3000",
-        "http://127.0.0.1:8000",
-        "http://localhost:8000"
-    ],
+    allow_origins=origins_list,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -143,12 +137,16 @@ async def login(
 # ==========================================
 # 📊 مسارات الإدارة والواجهة والتقارير
 # ==========================================
+
+# 🛡️ حماية الذاكرة: تمت إضافة skip و limit لمنع جلب ملايين السجلات دفعة واحدة
 @app.get("/api/admin/all_invoices", response_model=List[schemas.InvoiceResponse])
 async def get_all_system_invoices(
+        skip: int = 0,
+        limit: int = 100,
         admin_user: models.User = Depends(get_current_admin),
         db: AsyncSession = Depends(get_db)
 ):
-    query = select(models.Invoice).options(selectinload(models.Invoice.items)).order_by(models.Invoice.date.desc())
+    query = select(models.Invoice).options(selectinload(models.Invoice.items)).order_by(models.Invoice.date.desc()).offset(skip).limit(limit)
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -187,10 +185,17 @@ async def get_summary(current_user: models.User = Depends(get_current_user), db:
     net_profit = total_income - total_expenses
     return schemas.SummaryResponse(total_income=total_income, total_expenses=total_expenses, net_profit=net_profit)
 
+# 🛡️ حماية الإغراق: تم تفعيل limit هنا لحماية السيرفر من العمليات الحسابية المتكررة
 @app.get("/api/reports/summary", response_model=schemas.ReportSummaryResponse)
-async def get_reports_summary(start_date: Optional[date] = None, end_date: Optional[date] = None,
-                              crop_name: Optional[str] = None, current_user: models.User = Depends(get_current_user),
-                              db: AsyncSession = Depends(get_db)):
+@limiter.limit("30/minute")
+async def get_reports_summary(
+    request: Request,
+    start_date: Optional[date] = None,
+    end_date: Optional[date] = None,
+    crop_name: Optional[str] = None,
+    current_user: models.User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
     query = select(
         func.sum(models.Invoice.total_gross).label("total_gross"),
         func.sum(models.Invoice.deductions).label("total_deductions"),
@@ -243,14 +248,15 @@ async def get_crop_history(crop_name: str, year: Optional[int] = None, skip: int
 
     return schemas.CropHistoryResponse(crop_name=crop_name, history=history_list, total_weight=total_w,
                                        total_revenue=total_r)
+
 @app.get("/api/me")
 async def get_my_profile(current_user: models.User = Depends(get_current_user)):
-    # إذا وصل الكود إلى هذا السطر، فهذا يعني أن نقطة التفتيش سمحت له بالمرور!
     return {
         "message": "مرحباً بك! لقد مررت بنجاح لأنك تحمل توكن صالح.",
         "username": current_user.username,
         "is_admin": current_user.role == "admin"
     }
+
 @app.delete("/api/reset")
 async def reset_database(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     try:
