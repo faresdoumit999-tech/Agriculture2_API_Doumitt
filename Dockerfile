@@ -1,18 +1,15 @@
 # ==========================================
 # المرحلة الأولى: البناء (Builder Stage)
 # ==========================================
-FROM python:3.13-slim as builder
+FROM python:3.13-slim AS builder
 
 WORKDIR /app
 
-# منع بايثون من كتابة ملفات مؤقتة وتخزين الكاش
 ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 
-# تثبيت أدوات النظام الأساسية المطلوبة لترجمة بعض المكتبات (مثل asyncpg)
-RUN apt-get update && apt-get install -y gcc
+RUN apt-get update && apt-get install -y gcc && rm -rf /var/lib/apt/lists/*
 
-# نسخ ملف المتطلبات وتحويل المكتبات إلى صيغة "عجلات" (Wheels) لتسريع التثبيت لاحقاً
 COPY requirements.txt .
 RUN pip wheel --no-cache-dir --no-deps --wheel-dir /app/wheels -r requirements.txt
 
@@ -23,19 +20,17 @@ FROM python:3.13-slim
 
 WORKDIR /app
 
-# استيراد المكتبات الجاهزة من المرحلة الأولى فقط (بدون أدوات البناء مثل gcc)
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+
 COPY --from=builder /app/wheels /wheels
 COPY --from=builder /app/requirements.txt .
-
-# تثبيت المكتبات الجاهزة بدون الحاجة للاتصال بالإنترنت أو الترجمة
 RUN pip install --no-cache /wheels/*
 
-# نسخ كود المشروع النظيف
 COPY . .
 
-# كشف المنفذ للسيرفر
 EXPOSE 8000
 
-# أمر التشغيل الاحترافي للسيرفر
-# تشغيل هجرات Alembic تلقائياً لبناء/تحديث الجداول ثم إقلاع السيرفر
-CMD ["sh", "-c", "alembic upgrade head || echo '⚠️ alembic failed'; exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+# 1) ينفّذ الـ migrations، وإذا فشلت بيطبع السبب ويكمل (السيرفر ما بيموت)
+# 2) يشغّل uvicorn على البورت اللي بتعطيه المنصة ($PORT) أو 8000 افتراضياً
+CMD ["sh", "-c", "alembic upgrade head || echo '⚠️ alembic failed - check the error above'; exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

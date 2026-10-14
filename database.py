@@ -5,15 +5,20 @@ from config import settings
 
 
 def get_async_database_url():
+    """يحوّل الرابط لصيغة asyncpg ويشيل البارامترات اللي asyncpg ما بيعرفها."""
     url = make_url(settings.database_url)
     if url.drivername in ("postgresql", "postgres", "postgresql+psycopg2"):
         url = url.set(drivername="postgresql+asyncpg")
-    query = {k: v for k, v in url.query.items()
-             if k not in ("sslmode", "ssl", "channel_binding")}
+    query = {
+        k: v
+        for k, v in url.query.items()
+        if k not in ("sslmode", "ssl", "channel_binding")
+    }
     return url.set(query=query)
 
 
 def get_connect_args():
+    """تفعيل SSL تلقائياً مع Neon."""
     host = make_url(settings.database_url).host or ""
     return {"ssl": "require"} if "neon.tech" in host else {}
 
@@ -25,7 +30,12 @@ engine = create_async_engine(
     connect_args=get_connect_args(),
 )
 
-SessionLocal = sessionmaker(bind=engine, class_=AsyncSession, expire_on_commit=False)
+SessionLocal = sessionmaker(
+    bind=engine,
+    class_=AsyncSession,
+    expire_on_commit=False,
+)
+
 Base = declarative_base()
 
 
