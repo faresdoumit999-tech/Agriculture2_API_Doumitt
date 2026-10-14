@@ -218,7 +218,7 @@ async def get_reports_summary(
     )
 
 @app.get("/api/crops", response_model=list[str])
-@cache(expire=60 * 30)
+@cache(expire=1800)
 async def get_crops(current_user: models.User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
     query = select(models.InvoiceItem.crop_name).join(models.Invoice).where(
         models.Invoice.owner_id == current_user.id).distinct()
