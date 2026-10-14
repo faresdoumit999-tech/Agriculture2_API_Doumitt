@@ -28,5 +28,6 @@ jobs:
         SECRET_KEY: ${{ secrets.SECRET_KEY }}
         DATABASE_URL: "sqlite+aiosqlite:///./dummy.db"
         REDIS_URL: "redis://localhost:6379"
+        ALLOWED_ORIGINS: "http://localhost:8000,http://localhost:3000"
       run: |
         pytest --cov=.
