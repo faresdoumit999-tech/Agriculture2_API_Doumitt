@@ -37,4 +37,5 @@ COPY . .
 EXPOSE 8000
 
 # أمر التشغيل الاحترافي للسيرفر
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# تشغيل هجرات Alembic تلقائياً لبناء/تحديث الجداول ثم إقلاع السيرفر
+CMD ["sh", "-c", "alembic upgrade head && uvicorn main:app --host 0.0.0.0 --port 8000"]

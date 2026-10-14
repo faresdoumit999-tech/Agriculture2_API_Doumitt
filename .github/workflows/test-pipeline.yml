@@ -9,25 +9,25 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-    - name: Set up Python
-      uses: actions/setup-python@v5
-      with:
-        python-version: "3.13"
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
 
-    - name: Install Dependencies
-      run: |
-        python -m pip install --upgrade pip
-        pip install -r requirements.txt
-        pip install pytest pytest-asyncio pytest-cov httpx aiosqlite
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest pytest-asyncio pytest-cov httpx aiosqlite
 
-    - name: Run Tests (Pytest)
-      env:
-        SECRET_KEY: ${{ secrets.SECRET_KEY }}
-        DATABASE_URL: "sqlite+aiosqlite:///./dummy.db"
-        REDIS_URL: "redis://localhost:6379"
-        ALLOWED_ORIGINS: "http://localhost:8000,http://localhost:3000"
-      run: |
-        pytest --cov=.
+      - name: Run Tests (Pytest)
+        env:
+          SECRET_KEY: "dummy_secret_key_for_ci_testing"
+          DATABASE_URL: "sqlite+aiosqlite:///./dummy.db"
+          REDIS_URL: "redis://localhost:6379"
+          ALLOWED_ORIGINS: "http://localhost:8000,http://localhost:3000"
+        run: |
+          pytest --cov=.
