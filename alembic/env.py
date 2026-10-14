@@ -18,7 +18,7 @@ import models # ضروري جداً لكي يقرأ كل الجداول
 config = context.config
 
 # 3. سحب رابط قاعدة البيانات بأمان من ملف .env (بدون هارد كود)
-config.set_main_option("sqlalchemy.url", settings.database_url)
+
 
 if config.config_file_name is not None:
     fileConfig(config.config_file_name)
@@ -43,12 +43,15 @@ def do_run_migrations(connection) -> None:
     with context.begin_transaction():
         context.run_migrations()
 
+from sqlalchemy.ext.asyncio import create_async_engine
+from database import Base, get_async_database_url, get_connect_args
+import models
+
 async def run_async_migrations() -> None:
-    """الاتصال غير المتزامن (Async) بقاعدة البيانات لتطبيق التعديلات"""
-    connectable = async_engine_from_config(
-        config.get_section(config.config_ini_section, {}),
-        prefix="sqlalchemy.",
+    connectable = create_async_engine(
+        get_async_database_url(),
         poolclass=pool.NullPool,
+        connect_args=get_connect_args(),
     )
     async with connectable.connect() as connection:
         await connection.run_sync(do_run_migrations)
