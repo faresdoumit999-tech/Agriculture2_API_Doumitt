@@ -33,4 +33,4 @@ EXPOSE 8000
 
 # 1) ينفّذ الـ migrations، وإذا فشلت بيطبع السبب ويكمل (السيرفر ما بيموت)
 # 2) يشغّل uvicorn على البورت اللي بتعطيه المنصة ($PORT) أو 8000 افتراضياً
-CMD ["sh", "-c", "alembic upgrade head || echo '⚠️ alembic failed - check the error above'; exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]
