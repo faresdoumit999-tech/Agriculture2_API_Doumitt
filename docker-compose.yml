@@ -45,6 +45,21 @@ services:
     networks:
       - doumitt_internal
 
+  # 👷 الحاوية الرابعة: العامل الخلفي (Celery Worker)
+  celery_worker:
+    build: .
+    container_name: doumitt_celery_worker
+    command: celery -A worker.celery_app worker --loglevel=info
+    depends_on:
+      - redis
+      - db
+    networks:
+      - doumitt_internal
+    volumes:
+      - .:/app
+    env_file:
+      - .env
+
 # 🛡️ تعريف الشبكة الداخلية المعزولة
 networks:
   doumitt_internal:
