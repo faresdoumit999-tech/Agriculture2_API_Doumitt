@@ -19,6 +19,7 @@ from redis import asyncio as aioredis
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
+from worker import generate_heavy_report_task
 
 import models, schemas
 from config import settings
@@ -216,6 +217,16 @@ async def get_reports_summary(
         total_net=row.total_net or 0.0 if row else 0.0,
         total_weight=row.total_weight or 0.0 if row else 0.0
     )
+@app.post("/api/reports/heavy-report")
+async def request_heavy_report(current_user: models.User = Depends(get_current_user)):
+    # 🪄 السحر هنا: استخدام .delay يرسل المهمة لـ Redis ولا ينتظر نتيجتها!
+    task = generate_heavy_report_task.delay(current_user.id)
+
+    # السيرفر يرد في جزء من الثانية، بينما Celery يعمل في الخلفية
+    return {
+        "message": "تم استلام طلبك. جاري تجهيز التقرير المعقد في الخلفية ولن تتعطل واجهة التطبيق!",
+        "task_id": task.id
+    }
 
 @app.get("/api/crops", response_model=list[str])
 @cache(expire=1800)
