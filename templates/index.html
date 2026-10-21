@@ -1,0 +1,1939 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ app_name }}</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: { cairo: ['Cairo', 'sans-serif'] },
+          colors: { leaf: { 900: '#0b2b22', 800: '#103a2e', 700: '#145243', 600: '#0f766e', 500: '#14b8a6' } }
+        }
+      }
+    };
+  </script>
+  <style>
+    * { font-family: 'Cairo', sans-serif; }
+    body { background: #f4f6f1; }
+    .field { width: 100%; border: 1px solid #d9dfd4; border-radius: .8rem; padding: .62rem .85rem; background: #fff; font-size: .85rem; color: #1f2937; transition: .15s; }
+    .field:focus { outline: none; border-color: #0f766e; box-shadow: 0 0 0 3px rgba(15,118,110,.12); }
+    .label { display: block; font-size: .72rem; font-weight: 700; color: #64748b; margin-bottom: .35rem; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: .4rem; border-radius: .8rem; padding: .6rem 1rem; font-size: .82rem; font-weight: 700; transition: .15s; cursor: pointer; border: none; }
+    .btn-primary { background: #0f766e; color: #fff; }
+    .btn-primary:hover { background: #115e59; }
+    .btn-amber { background: #d97706; color: #fff; }
+    .btn-amber:hover { background: #b45309; }
+    .btn-soft { background: #eef2e9; color: #334155; }
+    .btn-soft:hover { background: #e2e8d9; }
+    .btn-danger { background: #fee2e2; color: #b91c1c; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-sm { padding: .35rem .6rem; font-size: .72rem; border-radius: .6rem; }
+    .card { background: #fff; border: 1px solid #e5e9df; border-radius: 1.2rem; box-shadow: 0 8px 24px -18px rgba(15,42,34,.35); }
+    .nav-btn { display:flex; align-items:center; gap:.7rem; width:100%; padding:.72rem .9rem; border-radius:.85rem; color:#b9d2c7; font-size:.85rem; font-weight:600; transition:.15s; text-align:right; }
+    .nav-btn:hover { background: rgba(255,255,255,.07); color:#fff; }
+    .nav-btn.active { background: #14b8a6; color: #06241d; box-shadow: 0 10px 20px -12px rgba(20,184,166,.9); }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .78rem; }
+    thead th { background: #f5f7f2; color: #64748b; font-weight: 700; padding: .65rem .7rem; text-align: right; white-space: nowrap; border-bottom: 1px solid #e5e9df; }
+    tbody td { padding: .6rem .7rem; border-bottom: 1px solid #f0f2eb; vertical-align: middle; }
+    tbody tr:hover { background: #fafbf7; }
+    .badge { display:inline-flex; align-items:center; gap:.25rem; border-radius:999px; padding:.18rem .55rem; font-size:.66rem; font-weight:700; white-space:nowrap; }
+    .modal-backdrop { position: fixed; inset: 0; background: rgba(8,25,20,.55); backdrop-filter: blur(3px); z-index: 60; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+    .modal-panel { background:#fff; border-radius:1.25rem; width:100%; max-height:92vh; overflow-y:auto; box-shadow:0 30px 60px -20px rgba(0,0,0,.45); }
+    .toast { position: fixed; bottom: 1.25rem; left: 50%; transform: translateX(-50%); z-index: 90; min-width: 260px; max-width: 90vw; border-radius: .9rem; padding: .8rem 1.1rem; color:#fff; font-size:.82rem; font-weight:600; box-shadow:0 20px 40px -18px rgba(0,0,0,.5); }
+    .view { display: none; }
+    .view.active { display: block; }
+    .scrollbar-thin::-webkit-scrollbar { width: 6px; height: 6px; }
+    .scrollbar-thin::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9px; }
+    .kpi { background: linear-gradient(145deg,#ffffff,#f8faf5); }
+    .progress { height: .4rem; border-radius: 999px; background:#edf1e8; overflow:hidden; }
+    .progress > span { display:block; height:100%; border-radius:999px; }
+    .chip { display:inline-flex; align-items:center; gap:.3rem; border-radius:999px; background:#f1f5ec; color:#475569; padding:.18rem .55rem; font-size:.66rem; font-weight:600; }
+    .mini-input { border:1px solid #e2e8dd; border-radius:.55rem; padding:.38rem .45rem; font-size:.72rem; width:100%; background:#fff; }
+    .mini-input:focus { outline:none; border-color:#0f766e; }
+    .line-item-row td { padding:.35rem .3rem; }
+    @media (max-width: 640px) { .modal-panel { max-height: 95vh; } }
+  </style>
+</head>
+<body class="text-slate-800">
+
+<!-- ============================ AUTH ============================ -->
+<div id="authScreen" class="min-h-screen flex items-center justify-center p-4 relative overflow-hidden" style="background: radial-gradient(circle at 15% 15%, #14532d 0%, #0b2b22 45%, #061a15 100%);">
+  <div class="absolute -top-24 -left-24 h-72 w-72 rounded-full bg-emerald-500/20 blur-3xl"></div>
+  <div class="absolute -bottom-24 -right-24 h-80 w-80 rounded-full bg-amber-400/10 blur-3xl"></div>
+  <div class="w-full max-w-md relative">
+    <div class="text-center mb-7">
+      <div class="mx-auto h-16 w-16 rounded-2xl bg-emerald-400/15 border border-emerald-300/30 flex items-center justify-center text-3xl mb-3">🌱</div>
+      <h1 class="text-white text-2xl font-extrabold tracking-wide">DOUMITT</h1>
+      <p class="text-emerald-200/80 text-sm mt-1">نظام إدارة المزارع والمشاريع الزراعية</p>
+    </div>
+    <div class="bg-white rounded-3xl p-6 shadow-2xl">
+      <div class="flex bg-slate-100 rounded-xl p-1 mb-5">
+        <button type="button" id="authTabLogin" onclick="switchAuthTab('login')" class="flex-1 rounded-lg py-2 text-sm font-bold bg-white text-emerald-800 shadow-sm">تسجيل الدخول</button>
+        <button type="button" id="authTabRegister" onclick="switchAuthTab('register')" class="flex-1 rounded-lg py-2 text-sm font-bold text-slate-500">حساب جديد</button>
+      </div>
+
+      <form id="loginForm" class="space-y-4">
+        <div>
+          <label class="label">اسم المستخدم</label>
+          <input class="field" name="username" autocomplete="username" required placeholder="مثال: abu_ahmad" />
+        </div>
+        <div>
+          <label class="label">كلمة المرور</label>
+          <input class="field" type="password" name="password" autocomplete="current-password" required placeholder="••••••••" />
+        </div>
+        <p id="loginError" class="text-xs text-red-600 hidden"></p>
+        <button class="btn btn-primary w-full py-3" type="submit">دخول إلى اللوحة</button>
+      </form>
+
+      <form id="registerForm" class="space-y-4 hidden">
+        <div>
+          <label class="label">اسم المستخدم</label>
+          <input class="field" name="username" required minlength="3" placeholder="حروف إنجليزية وأرقام" />
+        </div>
+        <div>
+          <label class="label">رقم الهاتف (اختياري)</label>
+          <input class="field" name="phone_number" placeholder="09xxxxxxxx" />
+        </div>
+        <div>
+          <label class="label">كلمة المرور</label>
+          <input class="field" type="password" name="password" required minlength="6" placeholder="6 أحرف على الأقل" />
+        </div>
+        <p id="registerError" class="text-xs text-red-600 hidden"></p>
+        <button class="btn btn-primary w-full py-3" type="submit">إنشاء الحساب</button>
+      </form>
+    </div>
+    <p class="text-center text-emerald-100/50 text-[11px] mt-5">إدارة المشاريع • المستودع • الشغّيلة • الفواتير • التقارير</p>
+  </div>
+</div>
+
+<!-- ============================ APP ============================ -->
+<div id="appShell" class="hidden min-h-screen">
+  <aside class="hidden lg:flex fixed top-0 right-0 bottom-0 w-64 flex-col p-4 z-40" style="background: linear-gradient(180deg,#0b2b22,#082019);">
+    <div class="flex items-center gap-3 px-2 py-3 mb-4">
+      <div class="h-10 w-10 rounded-xl bg-emerald-400/15 border border-emerald-300/20 flex items-center justify-center text-xl">🌱</div>
+      <div>
+        <div class="text-white font-extrabold tracking-wider text-sm">DOUMITT</div>
+        <div class="text-emerald-300/60 text-[10px]">Agricultural ERP</div>
+      </div>
+    </div>
+    <nav class="space-y-1 flex-1">
+      <button class="nav-btn active" data-view="dashboard">📊 <span>لوحة القيادة والمشاريع</span></button>
+      <button class="nav-btn" data-view="warehouse">📦 <span>المستودع</span></button>
+      <button class="nav-btn" data-view="pharmacies">🏥 <span>جرد الصيدليات</span></button>
+      <button class="nav-btn" data-view="expenses">🧾 <span>المصاريف</span></button>
+      <button class="nav-btn" data-view="invoices">🥬 <span>فواتير السوق</span></button>
+      <button class="nav-btn" data-view="reports">📈 <span>التقارير والتحليل</span></button>
+    </nav>
+    <div class="border-t border-white/10 pt-3 mt-3">
+      <div class="px-2 text-[11px] text-emerald-200/50">المستخدم الحالي</div>
+      <div class="px-2 text-sm text-white font-bold truncate" id="sidebarUser">—</div>
+      <button class="nav-btn mt-2" onclick="logout()">🚪 <span>تسجيل الخروج</span></button>
+    </div>
+  </aside>
+
+  <div class="lg:mr-64 min-h-screen flex flex-col">
+    <header class="sticky top-0 z-30 bg-white/80 backdrop-blur border-b border-slate-200/70">
+      <div class="px-4 lg:px-8 py-3 flex items-center justify-between gap-3">
+        <div>
+          <h2 id="viewTitle" class="font-extrabold text-lg text-slate-900">لوحة القيادة</h2>
+          <p class="text-[11px] text-slate-400 hidden sm:block">إدارة كاملة للمشاريع والبيوت البلاستيكية والحسابات بعملتين</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <span class="hidden sm:inline-flex text-[11px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-full px-3 py-1" id="headerUser">—</span>
+          <button class="lg:hidden btn btn-soft btn-sm" onclick="logout()">خروج</button>
+        </div>
+      </div>
+      <div class="lg:hidden px-3 pb-2 flex gap-1 overflow-x-auto scrollbar-thin">
+        <button class="nav-btn !w-auto !py-1.5 !px-3 !text-slate-600 !bg-slate-100 active-mobile" data-view="dashboard">📊</button>
+        <button class="nav-btn !w-auto !py-1.5 !px-3 !text-slate-600 !bg-slate-100" data-view="warehouse">📦</button>
+        <button class="nav-btn !w-auto !py-1.5 !px-3 !text-slate-600 !bg-slate-100" data-view="pharmacies">🏥</button>
+        <button class="nav-btn !w-auto !py-1.5 !px-3 !text-slate-600 !bg-slate-100" data-view="expenses">🧾</button>
+        <button class="nav-btn !w-auto !py-1.5 !px-3 !text-slate-600 !bg-slate-100" data-view="invoices">🥬</button>
+        <button class="nav-btn !w-auto !py-1.5 !px-3 !text-slate-600 !bg-slate-100" data-view="reports">📈</button>
+      </div>
+    </header>
+
+    <main class="flex-1 px-4 lg:px-8 py-6">
+
+      <!-- ================= DASHBOARD ================= -->
+      <section id="view-dashboard" class="view active">
+        <div class="flex flex-wrap items-center justify-between gap-3 mb-5">
+          <div>
+            <h3 class="font-extrabold text-slate-900">ملخص الموسم</h3>
+            <p class="text-xs text-slate-400">نظرة شاملة على كل المشاريع بالدولار والليرة السورية</p>
+          </div>
+          <div class="flex gap-2">
+            <button class="btn btn-soft" onclick="refreshDashboard()">↻ تحديث</button>
+            <button class="btn btn-primary" onclick="openProjectModal()">＋ مشروع جديد</button>
+          </div>
+        </div>
+
+        <div id="dashboardKpis" class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-6"></div>
+
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4 mb-6">
+          <div class="card p-5 xl:col-span-2">
+            <div class="flex items-center justify-between mb-3">
+              <h4 class="font-bold text-sm">المقارنة بين المشاريع</h4>
+              <span class="text-[10px] text-slate-400">صافي الربح لكل مشروع</span>
+            </div>
+            <div id="projectComparison" class="space-y-3"></div>
+          </div>
+          <div class="card p-5">
+            <h4 class="font-bold text-sm mb-3">مؤشرات سريعة</h4>
+            <div id="quickInsights" class="space-y-3 text-xs"></div>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between mb-3">
+          <h4 class="font-bold text-sm">المشاريع والبيوت البلاستيكية</h4>
+          <span id="projectCountLabel" class="chip">0 مشروع</span>
+        </div>
+        <div id="projectCards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4"></div>
+      </section>
+
+      <!-- ================= WAREHOUSE ================= -->
+      <section id="view-warehouse" class="view">
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <div class="card p-5 xl:col-span-1 h-fit">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-sm">شراء جديد للمستودع</h3>
+              <span class="chip">أدوية وأسمدة</span>
+            </div>
+            <form id="warehouseForm" class="space-y-3">
+              <div>
+                <label class="label">اسم المنتج / الدواء</label>
+                <input class="field" name="product_name" required placeholder="مبيد، سماد، ..." />
+              </div>
+              <div>
+                <label class="label">اسم الصيدلية / التاجر</label>
+                <input class="field" name="pharmacy_name" required placeholder="صيدلية الأمل" />
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="label">تاريخ الشراء</label>
+                  <input class="field" type="date" name="purchase_date" required />
+                </div>
+                <div>
+                  <label class="label">الوحدة</label>
+                  <input class="field" name="unit" value="لتر" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="label">الكمية</label>
+                  <input class="field" type="number" step="0.01" min="0.01" name="quantity" required placeholder="1" />
+                </div>
+                <div>
+                  <label class="label">سعر الوحدة</label>
+                  <input class="field" type="number" step="0.01" min="0.01" name="unit_price" required placeholder="20" />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="label">العملة</label>
+                  <select class="field" name="currency" id="warehouseCurrency" onchange="toggleRateField('warehouseCurrency','warehouseRate')">
+                    <option value="USD">دولار USD</option>
+                    <option value="SYP">ليرة سورية SYP</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="label">سعر الصرف</label>
+                  <input class="field" type="number" step="0.01" min="0" name="exchange_rate" id="warehouseRate" placeholder="15000" />
+                </div>
+              </div>
+              <button class="btn btn-primary w-full" type="submit">إدخال إلى المستودع</button>
+            </form>
+          </div>
+
+          <div class="xl:col-span-2 card p-5">
+            <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+              <div>
+                <h3 class="font-bold text-sm">جرد المستودع الحالي</h3>
+                <p class="text-[11px] text-slate-400">الكميات المتبقية وتنبيهات النفاد</p>
+              </div>
+              <div class="flex items-center gap-2">
+                <input class="field !w-44 !py-1.5" id="warehouseSearch" placeholder="بحث باسم الصيدلية..." oninput="loadWarehouse()" />
+                <label class="flex items-center gap-1 text-[11px] font-bold text-slate-500">
+                  <input type="checkbox" id="lowStockOnly" onchange="loadWarehouse()" /> النواقص فقط
+                </label>
+              </div>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>المنتج</th><th>الصيدلية</th><th>التاريخ</th><th>المتبقي</th><th>التكلفة</th><th>الحالة</th><th>إجراءات</th></tr></thead>
+                <tbody id="warehouseTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= PHARMACIES ================= -->
+      <section id="view-pharmacies" class="view">
+        <div class="card p-5 mb-4">
+          <div class="flex flex-wrap items-end gap-2">
+            <div class="flex-1 min-w-[160px]">
+              <label class="label">اسم الصيدلية</label>
+              <input class="field" id="auditPharmacy" placeholder="كل الصيدليات" />
+            </div>
+            <div>
+              <label class="label">من تاريخ</label>
+              <input class="field" type="date" id="auditStart" />
+            </div>
+            <div>
+              <label class="label">إلى تاريخ</label>
+              <input class="field" type="date" id="auditEnd" />
+            </div>
+            <div class="min-w-[160px]">
+              <label class="label">المشروع</label>
+              <select class="field project-select" id="auditProject"></select>
+            </div>
+            <button class="btn btn-primary" onclick="loadPharmaciesAudit()">عرض الجرد</button>
+          </div>
+        </div>
+        <div id="pharmacyTotals" class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-4"></div>
+        <div id="pharmacyAuditList" class="space-y-4"></div>
+      </section>
+
+      <!-- ================= EXPENSES ================= -->
+      <section id="view-expenses" class="view">
+        <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+          <div class="card p-5 h-fit">
+            <div class="flex items-center justify-between mb-4">
+              <h3 class="font-bold text-sm" id="expenseFormTitle">تسجيل مصروف</h3>
+              <button class="btn btn-soft btn-sm hidden" id="cancelExpenseEdit" onclick="resetExpenseForm()">إلغاء التعديل</button>
+            </div>
+            <form id="expenseForm" class="space-y-3">
+              <input type="hidden" name="expense_id" />
+              <div>
+                <label class="label">المشروع</label>
+                <select class="field project-select" name="project_id" required onchange="syncExpenseSharecropper()"></select>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="label">التاريخ</label>
+                  <input class="field" type="date" name="date" required />
+                </div>
+                <div>
+                  <label class="label">الطبيعة</label>
+                  <select class="field" name="expense_nature">
+                    <option value="SEASONAL">موسمي / تأسيسي</option>
+                    <option value="DAILY" selected>يومي / تشغيلي</option>
+                  </select>
+                </div>
+              </div>
+              <div>
+                <label class="label">التصنيف</label>
+                <select class="field" name="category" id="expenseCategory" onchange="autoSharecropperForCategory()">
+                  <option value="PESTICIDE">دواء / رش</option>
+                  <option value="FERTILIZER">سماد</option>
+                  <option value="POLYSTYRENE">فلين</option>
+                  <option value="VEHICLE_FUEL">بنزين / مصروف سيارة</option>
+                  <option value="SETUP">تجهيز موسمي</option>
+                  <option value="OTHER">أخرى</option>
+                </select>
+              </div>
+              <div>
+                <label class="label">اسم المصروف / الدواء</label>
+                <input class="field" name="item_name" required placeholder="مثال: رش مبيد" />
+              </div>
+              <div>
+                <label class="label">اسم الصيدلية (اختياري)</label>
+                <input class="field" name="pharmacy_name" placeholder="صيدلية..." />
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="label">الكمية</label>
+                  <input class="field" type="number" step="0.01" min="0.01" name="quantity_used" value="1" required />
+                </div>
+                <div>
+                  <label class="label">سعر الوحدة</label>
+                  <input class="field" type="number" step="0.01" min="0" name="unit_price" required />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-2">
+                <div>
+                  <label class="label">العملة</label>
+                  <select class="field" name="currency" id="expenseCurrency" onchange="toggleRateField('expenseCurrency','expenseRate')">
+                    <option value="SYP">ليرة سورية SYP</option>
+                    <option value="USD">دولار USD</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="label">سعر الصرف</label>
+                  <input class="field" type="number" step="0.01" min="0" name="exchange_rate" id="expenseRate" placeholder="15000" />
+                </div>
+              </div>
+              <div class="rounded-xl bg-amber-50 border border-amber-100 p-3 space-y-2">
+                <label class="flex items-center gap-2 text-[11px] font-bold text-amber-900">
+                  <input type="checkbox" name="enters_sharecropper_calc" id="expenseEnters" /> تحميل نسبة من هذا المصروف على الشغّيل
+                </label>
+                <div>
+                  <label class="label !mb-1">نسبة مخصصة للشغّيل % (اختياري)</label>
+                  <input class="field !py-1.5" type="number" step="0.01" min="0" max="100" name="custom_sharecropper_pct" placeholder="افتراضي المشروع" />
+                </div>
+              </div>
+              <button class="btn btn-primary w-full" type="submit" id="expenseSubmitBtn">إضافة المصروف</button>
+            </form>
+          </div>
+
+          <div class="xl:col-span-2 card p-5">
+            <div class="flex flex-wrap items-end gap-2 mb-4">
+              <div>
+                <label class="label">المشروع</label>
+                <select class="field project-select" id="expenseFilterProject"></select>
+              </div>
+              <div>
+                <label class="label">الطبيعة</label>
+                <select class="field" id="expenseFilterNature">
+                  <option value="">الكل</option>
+                  <option value="SEASONAL">موسمي</option>
+                  <option value="DAILY">يومي</option>
+                </select>
+              </div>
+              <div>
+                <label class="label">التصنيف</label>
+                <select class="field" id="expenseFilterCategory">
+                  <option value="">الكل</option>
+                  <option value="PESTICIDE">أدوية</option>
+                  <option value="FERTILIZER">أسمدة</option>
+                  <option value="POLYSTYRENE">فلين</option>
+                  <option value="VEHICLE_FUEL">بنزين</option>
+                  <option value="SETUP">تجهيز</option>
+                  <option value="OTHER">أخرى</option>
+                </select>
+              </div>
+              <div>
+                <label class="label">من</label>
+                <input class="field" type="date" id="expenseFilterStart" />
+              </div>
+              <div>
+                <label class="label">إلى</label>
+                <input class="field" type="date" id="expenseFilterEnd" />
+              </div>
+              <button class="btn btn-primary" onclick="loadExpenses()">تصفية</button>
+              <button class="btn btn-soft" onclick="resetExpenseFilters()">مسح</button>
+            </div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>التاريخ</th><th>المشروع</th><th>الطبيعة</th><th>التصنيف</th><th>البند</th><th>الكمية</th><th>USD</th><th>SYP</th><th>على الشغّيل</th><th></th></tr></thead>
+                <tbody id="expensesTable"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= INVOICES ================= -->
+      <section id="view-invoices" class="view">
+        <div class="card p-5 mb-4">
+          <div class="flex items-center justify-between mb-4">
+            <h3 class="font-bold text-sm" id="invoiceFormTitle">فاتورة سوق خضرة جديدة</h3>
+            <button class="btn btn-soft btn-sm hidden" id="cancelInvoiceEdit" onclick="resetInvoiceForm()">إلغاء التعديل</button>
+          </div>
+          <form id="invoiceForm" class="space-y-4">
+            <input type="hidden" name="invoice_id" />
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-3">
+              <div>
+                <label class="label">المشروع</label>
+                <select class="field project-select" name="project_id" required onchange="calcInvoicePreview()"></select>
+              </div>
+              <div>
+                <label class="label">التاريخ</label>
+                <input class="field" type="date" name="date" required />
+              </div>
+              <div>
+                <label class="label">العملة</label>
+                <select class="field" name="currency" id="invoiceCurrency" onchange="toggleRateField('invoiceCurrency','invoiceRate'); calcInvoicePreview()">
+                  <option value="SYP">ليرة سورية SYP</option>
+                  <option value="USD">دولار USD</option>
+                </select>
+              </div>
+              <div>
+                <label class="label">سعر الصرف</label>
+                <input class="field" type="number" step="0.01" min="0" name="exchange_rate" id="invoiceRate" placeholder="15000" />
+              </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+              <div>
+                <label class="label">الكوميسيون</label>
+                <input class="field" type="number" step="0.01" min="0" name="commission_amount" value="0" oninput="calcInvoicePreview()" />
+              </div>
+              <div>
+                <label class="label">تكلفة الفلين</label>
+                <input class="field" type="number" step="0.01" min="0" name="polystyrene_expense" value="0" oninput="calcInvoicePreview()" />
+              </div>
+              <div>
+                <label class="label">بنزين / مصروف السيارة</label>
+                <input class="field" type="number" step="0.01" min="0" name="vehicle_fuel_expense" value="0" oninput="calcInvoicePreview()" />
+              </div>
+              <div>
+                <label class="label">خصومات أخرى</label>
+                <input class="field" type="number" step="0.01" min="0" name="other_deductions" value="0" oninput="calcInvoicePreview()" />
+              </div>
+            </div>
+
+            <div class="rounded-xl border border-slate-200 overflow-hidden">
+              <div class="flex items-center justify-between bg-slate-50 px-3 py-2">
+                <span class="text-xs font-bold text-slate-600">أصناف الفاتورة</span>
+                <button type="button" class="btn btn-soft btn-sm" onclick="addInvoiceItem()">＋ إضافة صنف</button>
+              </div>
+              <div class="table-wrap">
+                <table>
+                  <thead><tr><th>المحصول</th><th>عدد العبوات</th><th>الوزن القائم</th><th>الوزن الصافي</th><th>سعر الكيلو</th><th>الإجمالي</th><th></th></tr></thead>
+                  <tbody id="invoiceItemsBody"></tbody>
+                </table>
+              </div>
+            </div>
+
+            <div id="invoicePreview" class="grid grid-cols-2 md:grid-cols-4 gap-3"></div>
+
+            <div class="flex justify-end">
+              <button class="btn btn-primary px-8" type="submit" id="invoiceSubmitBtn">حفظ الفاتورة</button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card p-5">
+          <div class="flex flex-wrap items-end justify-between gap-2 mb-3">
+            <h3 class="font-bold text-sm">سجل الفواتير</h3>
+            <div class="flex items-end gap-2">
+              <div>
+                <label class="label">المشروع</label>
+                <select class="field project-select" id="invoiceFilterProject"></select>
+              </div>
+              <div>
+                <label class="label">المحصول</label>
+                <input class="field !w-32" id="invoiceFilterCrop" placeholder="باذنجان" />
+              </div>
+              <div>
+                <label class="label">من</label>
+                <input class="field" type="date" id="invoiceFilterStart" />
+              </div>
+              <div>
+                <label class="label">إلى</label>
+                <input class="field" type="date" id="invoiceFilterEnd" />
+              </div>
+              <button class="btn btn-primary" onclick="loadInvoices()">تصفية</button>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>التاريخ</th><th>المشروع</th><th>الأصناف</th><th>القائم</th><th>الصافي</th><th>حصة الشغّيل</th><th>ربح المالك</th><th></th></tr></thead>
+              <tbody id="invoicesTable"></tbody>
+            </table>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= REPORTS ================= -->
+      <section id="view-reports" class="view">
+        <div class="card p-5 mb-4">
+          <div class="flex flex-wrap items-end gap-2">
+            <div class="flex-1 min-w-[220px]">
+              <label class="label">اختر المشروع للتحليل الكامل</label>
+              <select class="field project-select" id="reportProject"></select>
+            </div>
+            <button class="btn btn-primary" onclick="loadProjectReport()">توليد التقرير الشامل</button>
+            <button class="btn btn-amber" onclick="runHeavyExport()">جرد شامل في الخلفية</button>
+          </div>
+          <p id="heavyExportStatus" class="text-[11px] text-slate-400 mt-2 hidden"></p>
+        </div>
+        <div id="reportContent" class="space-y-4">
+          <div class="card p-10 text-center text-slate-400 text-sm">اختر مشروعاً ثم اضغط «توليد التقرير الشامل» لعرض تكلفة وربح كل بيت بلاستيكي وكشف حساب الشغّيل.</div>
+        </div>
+      </section>
+
+    </main>
+    <footer class="px-6 py-4 text-center text-[10px] text-slate-400 border-t border-slate-200/60">
+      {{ app_name }} — الإصدار {{ app_version }} • حسابات بعملتين USD / SYP
+    </footer>
+  </div>
+</div>
+
+<div id="toast" class="toast hidden"></div>
+
+<!-- ============================ PROJECT MODAL ============================ -->
+<div id="projectModal" class="modal-backdrop hidden">
+  <div class="modal-panel max-w-2xl p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-extrabold" id="projectModalTitle">مشروع جديد</h3>
+      <button class="btn btn-soft btn-sm" onclick="closeModal('projectModal')">✕</button>
+    </div>
+    <form id="projectForm" class="space-y-4">
+      <input type="hidden" name="project_id" />
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div class="md:col-span-2">
+          <label class="label">اسم المشروع</label>
+          <input class="field" name="name" required placeholder="مشروع الأرض القبلية - قسم أ" />
+        </div>
+        <div>
+          <label class="label">عدد البيوت البلاستيكية</label>
+          <input class="field" type="number" min="1" name="greenhouse_count" value="1" required />
+        </div>
+        <div>
+          <label class="label">المزروعات</label>
+          <input class="field" name="crops_planted" placeholder="باذنجان، خيار" />
+        </div>
+        <div>
+          <label class="label">تاريخ بداية الموسم</label>
+          <input class="field" type="date" name="season_start_date" required />
+        </div>
+        <div>
+          <label class="label">تاريخ نهاية الموسم (اختياري)</label>
+          <input class="field" type="date" name="season_end_date" />
+        </div>
+        <label class="flex items-center gap-2 text-xs font-bold text-slate-600 md:col-span-2">
+          <input type="checkbox" name="is_active" checked /> الموسم نشط
+        </label>
+      </div>
+
+      <div class="rounded-xl border border-emerald-100 bg-emerald-50/50 p-4 space-y-3">
+        <label class="flex items-center gap-2 text-xs font-bold text-emerald-900">
+          <input type="checkbox" name="has_sharecropper" id="hasSharecropper" onchange="toggleSharecropperFields()" />
+          المشروع مستلمه شغّيل بالحصة
+        </label>
+        <div id="sharecropperFields" class="grid grid-cols-1 md:grid-cols-2 gap-3 hidden">
+          <div class="md:col-span-2">
+            <label class="label">اسم الشغّيل / المستلم</label>
+            <input class="field" name="sharecropper_name" placeholder="أبو أحمد" />
+          </div>
+          <div>
+            <label class="label">نسبته من صافي المبيعات %</label>
+            <input class="field" type="number" step="0.01" min="0" max="100" name="sharecropper_profit_pct" value="0" />
+          </div>
+          <div>
+            <label class="label">نسبته من الفلين والسيارة %</label>
+            <input class="field" type="number" step="0.01" min="0" max="100" name="sharecropper_expense_pct" value="0" />
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <label class="label">ملاحظات</label>
+        <textarea class="field" name="notes" rows="2" placeholder="ملاحظات اختيارية"></textarea>
+      </div>
+      <div class="flex justify-end gap-2">
+        <button type="button" class="btn btn-soft" onclick="closeModal('projectModal')">إلغاء</button>
+        <button type="submit" class="btn btn-primary px-8">حفظ المشروع</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============================ CONSUME MODAL ============================ -->
+<div id="consumeModal" class="modal-backdrop hidden">
+  <div class="modal-panel max-w-lg p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-extrabold">صرف / رش كمية لمشروع</h3>
+      <button class="btn btn-soft btn-sm" onclick="closeModal('consumeModal')">✕</button>
+    </div>
+    <div id="consumeItemInfo" class="text-xs bg-slate-50 rounded-xl p-3 mb-4"></div>
+    <form id="consumeForm" class="space-y-3">
+      <input type="hidden" name="warehouse_item_id" />
+      <div>
+        <label class="label">المشروع المستفيد</label>
+        <select class="field project-select" name="project_id" required></select>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="label">الكمية المسحوبة</label>
+          <input class="field" type="number" step="0.01" min="0.01" name="quantity_used" value="0.25" required />
+        </div>
+        <div>
+          <label class="label">تاريخ الرش/الصرف</label>
+          <input class="field" type="date" name="date" required />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="label">التصنيف</label>
+          <select class="field" name="category">
+            <option value="PESTICIDE">دواء / رش</option>
+            <option value="FERTILIZER">سماد</option>
+            <option value="POLYSTYRENE">فلين</option>
+            <option value="VEHICLE_FUEL">بنزين / سيارة</option>
+            <option value="OTHER">أخرى</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">الطبيعة</label>
+          <select class="field" name="expense_nature">
+            <option value="DAILY" selected>يومي</option>
+            <option value="SEASONAL">موسمي</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary w-full" type="submit">تأكيد السحب وإنشاء المصروف</button>
+      <p class="text-[10px] text-slate-400 text-center">سيُنشأ مصروف تلقائياً على المشروع بالتكلفة الدقيقة للكمية المسحوبة.</p>
+    </form>
+  </div>
+</div>
+
+<!-- ============================ EDIT ITEM MODAL ============================ -->
+<div id="itemModal" class="modal-backdrop hidden">
+  <div class="modal-panel max-w-lg p-5">
+    <div class="flex items-center justify-between mb-4">
+      <h3 class="font-extrabold">تعديل غرض المستودع</h3>
+      <button class="btn btn-soft btn-sm" onclick="closeModal('itemModal')">✕</button>
+    </div>
+    <form id="itemForm" class="space-y-3">
+      <input type="hidden" name="item_id" />
+      <div>
+        <label class="label">اسم المنتج</label>
+        <input class="field" name="product_name" required />
+      </div>
+      <div>
+        <label class="label">الصيدلية</label>
+        <input class="field" name="pharmacy_name" required />
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="label">تاريخ الشراء</label>
+          <input class="field" type="date" name="purchase_date" required />
+        </div>
+        <div>
+          <label class="label">الوحدة</label>
+          <input class="field" name="unit" required />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="label">الكمية الابتدائية</label>
+          <input class="field" type="number" step="0.01" min="0.01" name="initial_quantity" required />
+        </div>
+        <div>
+          <label class="label">الكمية المتبقية</label>
+          <input class="field" type="number" step="0.01" min="0" name="remaining_quantity" required />
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <label class="label">العملة</label>
+          <select class="field" name="currency" id="itemCurrency" onchange="toggleRateField('itemCurrency','itemRate')">
+            <option value="USD">USD</option>
+            <option value="SYP">SYP</option>
+          </select>
+        </div>
+        <div>
+          <label class="label">سعر الوحدة</label>
+          <input class="field" type="number" step="0.01" min="0.01" name="unit_price" required />
+        </div>
+      </div>
+      <div>
+        <label class="label">سعر الصرف</label>
+        <input class="field" type="number" step="0.01" min="0" name="exchange_rate" id="itemRate" />
+      </div>
+      <button class="btn btn-primary w-full" type="submit">حفظ التعديل</button>
+    </form>
+  </div>
+</div>
+
+<script>
+/* =========================================================================
+   State & helpers
+   ========================================================================= */
+const state = {
+  token: localStorage.getItem('doumitt_token'),
+  user: null,
+  projects: [],
+  warehouse: [],
+  expenses: [],
+  invoices: [],
+  summary: null,
+  invoiceItems: [],
+  editing: { project: null, expense: null, invoice: null },
+};
+
+const nf = new Intl.NumberFormat('en-US', { maximumFractionDigits: 2 });
+const $ = (selector) => document.querySelector(selector);
+const $$ = (selector) => Array.from(document.querySelectorAll(selector));
+
+function esc(value) {
+  return String(value ?? '').replace(/[&<>"']/g, (ch) => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+  }[ch]));
+}
+function usd(value) { return '$' + nf.format(Number(value || 0)); }
+function syp(value) { return nf.format(Number(value || 0)) + ' ل.س'; }
+function today() { return new Date().toISOString().slice(0, 10); }
+function setValue(selector, value) { const el = $(selector); if (el) el.value = value ?? ''; }
+function projectName(id) { return state.projects.find((p) => p.id === Number(id))?.name || '—'; }
+function projectById(id) { return state.projects.find((p) => p.id === Number(id)); }
+
+function toast(message, type = 'success') {
+  const el = $('#toast');
+  el.textContent = message;
+  el.style.background = type === 'error' ? '#b91c1c' : '#0f766e';
+  el.classList.remove('hidden');
+  clearTimeout(el._timer);
+  el._timer = setTimeout(() => el.classList.add('hidden'), 3800);
+}
+
+async function api(path, options = {}) {
+  const headers = Object.assign({}, options.headers || {});
+  if (state.token) headers['Authorization'] = 'Bearer ' + state.token;
+  if (options.body && !(options.body instanceof URLSearchParams)) headers['Content-Type'] = 'application/json';
+  const response = await fetch(path, Object.assign({}, options, { headers }));
+  const payload = await response.json().catch(() => ({}));
+  if (response.status === 401 && state.token) {
+    logout();
+    throw new Error('انتهت الجلسة، يرجى تسجيل الدخول مجدداً.');
+  }
+  if (!response.ok) {
+    throw new Error(payload?.error?.message || 'حدث خطأ غير متوقع.');
+  }
+  return payload;
+}
+
+function openModal(id) { $('#' + id).classList.remove('hidden'); }
+function closeModal(id) { $('#' + id).classList.add('hidden'); }
+function toggleRateField(currencyId, rateId) {
+  const currency = $('#' + currencyId).value;
+  const rate = $('#' + rateId);
+  rate.required = currency === 'USD';
+  rate.placeholder = currency === 'USD' ? 'مطلوب للدولار' : 'اختياري للسوري';
+}
+
+/* =========================================================================
+   Authentication
+   ========================================================================= */
+function switchAuthTab(tab) {
+  const isLogin = tab === 'login';
+  $('#loginForm').classList.toggle('hidden', !isLogin);
+  $('#registerForm').classList.toggle('hidden', isLogin);
+  $('#authTabLogin').className = 'flex-1 rounded-lg py-2 text-sm font-bold ' + (isLogin ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500');
+  $('#authTabRegister').className = 'flex-1 rounded-lg py-2 text-sm font-bold ' + (!isLogin ? 'bg-white text-emerald-800 shadow-sm' : 'text-slate-500');
+}
+
+async function handleLogin(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const errorEl = $('#loginError');
+  errorEl.classList.add('hidden');
+  try {
+    const response = await fetch('/api/login', {
+      method: 'POST',
+      body: new URLSearchParams({ username: form.get('username'), password: form.get('password') }),
+    });
+    const data = await response.json();
+    if (!response.ok) throw new Error(data?.error?.message || 'فشل تسجيل الدخول.');
+    state.token = data.access_token;
+    localStorage.setItem('doumitt_token', state.token);
+    state.user = await api('/api/me');
+    showApp();
+    await loadAll();
+  } catch (error) {
+    errorEl.textContent = error.message;
+    errorEl.classList.remove('hidden');
+  }
+}
+
+async function handleRegister(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const errorEl = $('#registerError');
+  errorEl.classList.add('hidden');
+  try {
+    await api('/api/register', {
+      method: 'POST',
+      body: JSON.stringify({
+        username: form.get('username'),
+        password: form.get('password'),
+        phone_number: form.get('phone_number') || null,
+      }),
+    });
+    const login = await fetch('/api/login', {
+      method: 'POST',
+      body: new URLSearchParams({ username: form.get('username'), password: form.get('password') }),
+    });
+    const data = await login.json();
+    if (!login.ok) throw new Error(data?.error?.message || 'تم إنشاء الحساب، لكن فشل الدخول التلقائي.');
+    state.token = data.access_token;
+    localStorage.setItem('doumitt_token', state.token);
+    state.user = await api('/api/me');
+    showApp();
+    toast('تم إنشاء الحساب بنجاح، أهلاً بك!');
+    await loadAll();
+  } catch (error) {
+    errorEl.textContent = error.message;
+    errorEl.classList.remove('hidden');
+  }
+}
+
+function showApp() {
+  $('#authScreen').classList.add('hidden');
+  $('#appShell').classList.remove('hidden');
+  $('#sidebarUser').textContent = state.user?.username || '—';
+  $('#headerUser').textContent = (state.user?.role === 'admin' ? 'مدير • ' : '') + (state.user?.username || '');
+}
+
+function logout() {
+  state.token = null;
+  state.user = null;
+  localStorage.removeItem('doumitt_token');
+  $('#appShell').classList.add('hidden');
+  $('#authScreen').classList.remove('hidden');
+  switchAuthTab('login');
+}
+
+/* =========================================================================
+   Navigation & bootstrap
+   ========================================================================= */
+const VIEW_TITLES = {
+  dashboard: 'لوحة القيادة', warehouse: 'المستودع المركزي', pharmacies: 'جرد الصيدليات',
+  expenses: 'المصاريف الموسمية واليومية', invoices: 'فواتير سوق الخضرة', reports: 'التقارير والتحليل الذكي',
+};
+
+function switchView(view) {
+  $$('.view').forEach((section) => section.classList.toggle('active', section.id === 'view-' + view));
+  $$('[data-view]').forEach((button) => button.classList.toggle('active', button.dataset.view === view));
+  $('#viewTitle').textContent = VIEW_TITLES[view] || '';
+  if (view === 'dashboard') refreshDashboard();
+  if (view === 'warehouse') loadWarehouse();
+  if (view === 'expenses') loadExpenses();
+  if (view === 'invoices') loadInvoices();
+  if (view === 'pharmacies') loadPharmaciesAudit();
+}
+
+async function loadAll() {
+  await Promise.all([loadProjects(), loadWarehouse(), loadExpenses(), loadInvoices()]);
+  await refreshDashboard();
+  loadPharmaciesAudit();
+}
+
+async function loadProjects() {
+  try {
+    state.projects = await api('/api/projects');
+    fillProjectSelects();
+    renderProjectCards();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function fillProjectSelects() {
+  $$('.project-select').forEach((select) => {
+    const previous = select.value;
+    const first = select.id.startsWith('report') || select.id.startsWith('invoiceFilter') || select.id.startsWith('expenseFilter') || select.id.startsWith('audit')
+      ? '<option value="">كل المشاريع</option>'
+      : '<option value="">اختر المشروع</option>';
+    select.innerHTML = first + state.projects.map((project) =>
+      `<option value="${project.id}">${esc(project.name)}</option>`
+    ).join('');
+    if (previous && Array.from(select.options).some((option) => option.value === previous)) select.value = previous;
+  });
+  const reportSelect = $('#reportProject');
+  if (reportSelect && !reportSelect.value && state.projects.length) reportSelect.value = state.projects[0].id;
+}
+
+/* =========================================================================
+   Dashboard
+   ========================================================================= */
+async function refreshDashboard() {
+  try {
+    state.summary = await api('/api/reports/global-summary');
+    state.projects = await api('/api/projects');
+    fillProjectSelects();
+    renderDashboard();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function renderDashboard() {
+  const s = state.summary;
+  if (!s) return;
+  const t = s.totals;
+
+  $('#dashboardKpis').innerHTML = `
+    <div class="card kpi p-4">
+      <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-400">صافي الربح الإجمالي</span><span class="text-xl">💰</span></div>
+      <div class="mt-2 text-xl font-extrabold ${t.net_profit_usd >= 0 ? 'text-emerald-700' : 'text-red-600'}">${usd(t.net_profit_usd)}</div>
+      <div class="text-[11px] text-slate-400 mt-1">${syp(t.net_profit_syp)}</div>
+      <div class="mt-2 text-[10px] ${t.net_profit_usd >= 0 ? 'text-emerald-600' : 'text-red-500'}">${t.net_profit_usd >= 0 ? '▲ ربح' : '▼ خسارة'} هذا الموسم</div>
+    </div>
+    <div class="card kpi p-4">
+      <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-400">صافي المبيعات</span><span class="text-xl">🥬</span></div>
+      <div class="mt-2 text-xl font-extrabold text-slate-800">${usd(t.sales_usd)}</div>
+      <div class="text-[11px] text-slate-400 mt-1">${syp(t.sales_syp)}</div>
+      <div class="mt-2 text-[10px] text-emerald-600">${s.projects_count} مشروع • ${s.total_greenhouses} بيت</div>
+    </div>
+    <div class="card kpi p-4">
+      <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-400">إجمالي المصاريف</span><span class="text-xl">🧾</span></div>
+      <div class="mt-2 text-xl font-extrabold text-amber-700">${usd(t.expenses_usd)}</div>
+      <div class="text-[11px] text-slate-400 mt-1">${syp(t.expenses_syp)}</div>
+      <div class="mt-2 text-[10px] text-slate-400">${s.active_projects} موسم نشط من ${s.projects_count}</div>
+    </div>
+    <div class="card kpi p-4">
+      <div class="flex items-center justify-between"><span class="text-[11px] font-bold text-slate-400">مستحقات الشغّيلة</span><span class="text-xl">🤝</span></div>
+      <div class="mt-2 text-xl font-extrabold text-teal-700">${usd(t.sharecropper_dues_usd)}</div>
+      <div class="text-[11px] text-slate-400 mt-1">${syp(t.sharecropper_dues_syp)}</div>
+      <div class="mt-2 text-[10px] text-teal-600">صافي بعد خصم الفلين والسيارة</div>
+    </div>`;
+
+  const maxProfit = Math.max(...s.projects.map((p) => Math.abs(p.net_profit_usd || 0)), 1);
+  $('#projectComparison').innerHTML = s.projects.length ? s.projects.map((p) => `
+    <div>
+      <div class="flex items-center justify-between text-[11px] mb-1">
+        <span class="font-bold text-slate-700">${esc(p.name)}</span>
+        <span class="${p.net_profit_usd >= 0 ? 'text-emerald-700' : 'text-red-600'} font-bold">${usd(p.net_profit_usd)}</span>
+      </div>
+      <div class="progress"><span style="width:${Math.min(100, Math.abs(p.net_profit_usd || 0) / maxProfit * 100)}%;background:${p.net_profit_usd >= 0 ? '#0f766e' : '#dc2626'}"></span></div>
+      <div class="text-[9px] text-slate-400 mt-1">${p.greenhouse_count} بيت • ${usd(p.profit_per_greenhouse_usd)} / بيت</div>
+    </div>`).join('') : '<p class="text-xs text-slate-400">لا توجد مشاريع بعد.</p>';
+
+  $('#quickInsights').innerHTML = `
+    <div class="flex items-center justify-between rounded-xl bg-emerald-50 p-3">
+      <span class="text-slate-500">أفضل مشروع ربحاً</span>
+      <span class="font-bold text-emerald-800">${s.most_profitable ? esc(s.most_profitable.name) : '—'}</span>
+    </div>
+    <div class="flex items-center justify-between rounded-xl bg-amber-50 p-3">
+      <span class="text-slate-500">أعلى مشروع تكلفة</span>
+      <span class="font-bold text-amber-800">${s.most_costly ? esc(s.most_costly.name) : '—'}</span>
+    </div>
+    <div class="flex items-center justify-between rounded-xl bg-slate-50 p-3">
+      <span class="text-slate-500">أعلى تكلفة</span>
+      <span class="font-bold text-slate-700">${s.most_costly ? usd(s.most_costly.expenses_usd) : '—'}</span>
+    </div>
+    <div class="flex items-center justify-between rounded-xl bg-teal-50 p-3">
+      <span class="text-slate-500">أفضل ربح/بيت</span>
+      <span class="font-bold text-teal-800">${s.most_profitable ? usd(s.most_profitable.profit_per_greenhouse_usd) : '—'}</span>
+    </div>`;
+
+  renderProjectCards();
+}
+
+function renderProjectCards() {
+  const container = $('#projectCards');
+  if (!container) return;
+  $('#projectCountLabel').textContent = state.projects.length + ' مشروع';
+  if (!state.projects.length) {
+    container.innerHTML = `
+      <div class="card p-8 text-center md:col-span-2 xl:col-span-3">
+        <div class="text-4xl mb-2">🌿</div>
+        <p class="text-sm font-bold text-slate-600">لم تضف أي مشروع بعد</p>
+        <p class="text-xs text-slate-400 mt-1">ابدأ بإنشاء مشروعك الأول وحدّد عدد البيوت البلاستيكية ونسبة الشغّيل.</p>
+        <button class="btn btn-primary mt-4" onclick="openProjectModal()">إنشاء أول مشروع</button>
+      </div>`;
+    return;
+  }
+  container.innerHTML = state.projects.map((project) => {
+    const f = project.financials || {};
+    return `
+    <div class="card p-5 flex flex-col">
+      <div class="flex items-start justify-between gap-2">
+        <div>
+          <h4 class="font-extrabold text-slate-900 leading-6">${esc(project.name)}</h4>
+          <p class="text-[11px] text-slate-400 mt-0.5">${esc(project.crops_planted || 'مزروعات غير محددة')}</p>
+        </div>
+        <span class="badge ${project.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">${project.is_active ? 'نشط' : 'مغلق'}</span>
+      </div>
+      <div class="flex flex-wrap gap-1.5 mt-3">
+        <span class="chip">🏠 ${project.greenhouse_count} بيت</span>
+        <span class="chip">📅 ${project.season_start_date}${project.season_end_date ? ' ← ' + project.season_end_date : ''}</span>
+        ${project.has_sharecropper ? `<span class="chip !bg-amber-50 !text-amber-800">🤝 ${esc(project.sharecropper_name || 'شغّيل')} • ${project.sharecropper_profit_pct}%</span>` : ''}
+      </div>
+      <div class="grid grid-cols-3 gap-2 mt-4 text-center">
+        <div class="rounded-xl bg-slate-50 p-2">
+          <div class="text-[9px] text-slate-400 font-bold">مبيعات</div>
+          <div class="text-[12px] font-extrabold text-slate-800 mt-0.5">${usd(f.total_sales_usd)}</div>
+        </div>
+        <div class="rounded-xl bg-amber-50 p-2">
+          <div class="text-[9px] text-amber-600 font-bold">مصاريف</div>
+          <div class="text-[12px] font-extrabold text-amber-800 mt-0.5">${usd(f.total_expenses_usd)}</div>
+        </div>
+        <div class="rounded-xl ${f.net_profit_usd >= 0 ? 'bg-emerald-50' : 'bg-red-50'} p-2">
+          <div class="text-[9px] ${f.net_profit_usd >= 0 ? 'text-emerald-600' : 'text-red-500'} font-bold">صافي</div>
+          <div class="text-[12px] font-extrabold ${f.net_profit_usd >= 0 ? 'text-emerald-800' : 'text-red-700'} mt-0.5">${usd(f.net_profit_usd)}</div>
+        </div>
+      </div>
+      <div class="text-[10px] text-slate-400 mt-2 text-center">ربح البيت الواحد: <b class="${f.profit_per_greenhouse_usd >= 0 ? 'text-emerald-700' : 'text-red-600'}">${usd(f.profit_per_greenhouse_usd)}</b> • ${syp(f.net_profit_syp)}</div>
+      <div class="flex gap-2 mt-4 pt-3 border-t border-slate-100">
+        <button class="btn btn-primary btn-sm flex-1" onclick="openReportFor(${project.id})">التقرير</button>
+        <button class="btn btn-soft btn-sm" onclick="openProjectModal(${project.id})">تعديل</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteProject(${project.id})">حذف</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+/* =========================================================================
+   Projects modal
+   ========================================================================= */
+function openProjectModal(id = null) {
+  const form = $('#projectForm');
+  form.reset();
+  state.editing.project = id;
+  const project = id ? projectById(id) : null;
+  if (project) {
+    form.project_id.value = project.id;
+    form.name.value = project.name;
+    form.greenhouse_count.value = project.greenhouse_count;
+    form.crops_planted.value = project.crops_planted || '';
+    form.season_start_date.value = project.season_start_date;
+    form.season_end_date.value = project.season_end_date || '';
+    form.is_active.checked = project.is_active;
+    form.has_sharecropper.checked = project.has_sharecropper;
+    form.sharecropper_name.value = project.sharecropper_name || '';
+    form.sharecropper_profit_pct.value = project.sharecropper_profit_pct;
+    form.sharecropper_expense_pct.value = project.sharecropper_expense_pct;
+    form.notes.value = project.notes || '';
+    $('#projectModalTitle').textContent = 'تعديل المشروع';
+  } else {
+    form.project_id.value = '';
+    form.season_start_date.value = today();
+    form.is_active.checked = true;
+    $('#projectModalTitle').textContent = 'مشروع جديد';
+  }
+  toggleSharecropperFields();
+  openModal('projectModal');
+}
+
+function toggleSharecropperFields() {
+  const enabled = $('#hasSharecropper').checked;
+  $('#sharecropperFields').classList.toggle('hidden', !enabled);
+}
+
+async function handleProjectSubmit(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const id = form.get('project_id');
+  const payload = {
+    name: form.get('name'),
+    greenhouse_count: Number(form.get('greenhouse_count')),
+    crops_planted: form.get('crops_planted') || null,
+    season_start_date: form.get('season_start_date'),
+    season_end_date: form.get('season_end_date') || null,
+    is_active: form.get('is_active') === 'on',
+    has_sharecropper: form.get('has_sharecropper') === 'on',
+    sharecropper_name: form.get('sharecropper_name') || null,
+    sharecropper_profit_pct: Number(form.get('sharecropper_profit_pct') || 0),
+    sharecropper_expense_pct: Number(form.get('sharecropper_expense_pct') || 0),
+    notes: form.get('notes') || null,
+  };
+  try {
+    await api(id ? '/api/projects/' + id : '/api/projects', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(payload),
+    });
+    closeModal('projectModal');
+    toast(id ? 'تم تحديث المشروع.' : 'تم إنشاء المشروع بنجاح.');
+    await loadProjects();
+    await refreshDashboard();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+async function deleteProject(id) {
+  if (!confirm('سيتم حذف المشروع وكل مصاريفه وفواتيره. هل أنت متأكد؟')) return;
+  try {
+    await api('/api/projects/' + id, { method: 'DELETE' });
+    toast('تم حذف المشروع.');
+    await loadProjects();
+    await refreshDashboard();
+    await loadExpenses();
+    await loadInvoices();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function openReportFor(id) {
+  switchView('reports');
+  $('#reportProject').value = id;
+  loadProjectReport();
+}
+
+/* =========================================================================
+   Warehouse
+   ========================================================================= */
+async function loadWarehouse() {
+  try {
+    const params = new URLSearchParams();
+    const search = $('#warehouseSearch')?.value?.trim();
+    if (search) params.set('pharmacy_name', search);
+    if ($('#lowStockOnly')?.checked) params.set('low_stock_only', 'true');
+    state.warehouse = await api('/api/warehouse/items?' + params.toString());
+    renderWarehouse();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function renderWarehouse() {
+  const body = $('#warehouseTable');
+  if (!body) return;
+  if (!state.warehouse.length) {
+    body.innerHTML = '<tr><td colspan="7" class="text-center text-slate-400 py-6 text-xs">المستودع فارغ — أضف أول عملية شراء.</td></tr>';
+    return;
+  }
+  body.innerHTML = state.warehouse.map((item) => {
+    const pct = item.initial_quantity > 0 ? Math.min(100, item.remaining_quantity / item.initial_quantity * 100) : 0;
+    const color = item.stock_status === 'out' ? '#dc2626' : item.stock_status === 'low' ? '#d97706' : '#0f766e';
+    const status = item.stock_status === 'out'
+      ? '<span class="badge bg-red-100 text-red-700">منتهي</span>'
+      : item.stock_status === 'low'
+        ? '<span class="badge bg-amber-100 text-amber-800">قارب النفاد</span>'
+        : '<span class="badge bg-emerald-100 text-emerald-800">متوفر</span>';
+    return `<tr>
+      <td>
+        <div class="font-bold text-slate-800">${esc(item.product_name)}</div>
+        <div class="text-[10px] text-slate-400">${esc(item.unit)} • ${item.currency}</div>
+      </td>
+      <td class="text-slate-600">${esc(item.pharmacy_name)}</td>
+      <td class="text-slate-500">${item.purchase_date}</td>
+      <td class="min-w-[120px]">
+        <div class="flex items-center justify-between text-[10px] mb-1"><span class="font-bold text-slate-700">${nf.format(item.remaining_quantity)} / ${nf.format(item.initial_quantity)}</span><span class="text-slate-400">${pct.toFixed(0)}%</span></div>
+        <div class="progress"><span style="width:${pct}%;background:${color}"></span></div>
+      </td>
+      <td>
+        <div class="text-[11px] font-bold text-slate-700">${usd(item.total_cost_usd)}</div>
+        <div class="text-[10px] text-slate-400">${syp(item.total_cost_syp)}</div>
+      </td>
+      <td>${status}</td>
+      <td>
+        <div class="flex gap-1">
+          <button class="btn btn-primary btn-sm" onclick="openConsumeModal(${item.id})">رش/صرف</button>
+          <button class="btn btn-soft btn-sm" onclick="openItemModal(${item.id})">تعديل</button>
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+async function handleWarehouseSubmit(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const payload = {
+    product_name: form.get('product_name'),
+    pharmacy_name: form.get('pharmacy_name'),
+    purchase_date: form.get('purchase_date'),
+    quantity: Number(form.get('quantity')),
+    unit: form.get('unit') || 'لتر/عبوة',
+    currency: form.get('currency'),
+    unit_price: Number(form.get('unit_price')),
+    exchange_rate: form.get('exchange_rate') ? Number(form.get('exchange_rate')) : null,
+  };
+  try {
+    await api('/api/warehouse/items', { method: 'POST', body: JSON.stringify(payload) });
+    event.target.reset();
+    event.target.purchase_date.value = today();
+    event.target.unit.value = 'لتر';
+    toggleRateField('warehouseCurrency', 'warehouseRate');
+    toast('تم إدخال الغرض إلى المستودع.');
+    await loadWarehouse();
+    loadPharmaciesAudit();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function openConsumeModal(id) {
+  const item = state.warehouse.find((row) => row.id === Number(id));
+  if (!item) return;
+  const form = $('#consumeForm');
+  form.reset();
+  form.warehouse_item_id.value = item.id;
+  form.quantity_used.value = 0.25;
+  form.date.value = today();
+  form.category.value = 'PESTICIDE';
+  form.expense_nature.value = 'DAILY';
+  $('#consumeItemInfo').innerHTML = `
+    <div class="flex items-center justify-between">
+      <div><b class="text-slate-800">${esc(item.product_name)}</b><div class="text-slate-400 text-[10px]">${esc(item.pharmacy_name)} • ${esc(item.unit)}</div></div>
+      <div class="text-left"><div class="text-slate-400">المتبقي</div><div class="font-extrabold text-emerald-700">${nf.format(item.remaining_quantity)} ${esc(item.unit)}</div></div>
+    </div>`;
+  fillProjectSelects();
+  openModal('consumeModal');
+}
+
+async function handleConsumeSubmit(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const payload = {
+    warehouse_item_id: Number(form.get('warehouse_item_id')),
+    project_id: Number(form.get('project_id')),
+    quantity_used: Number(form.get('quantity_used')),
+    date: form.get('date'),
+    category: form.get('category'),
+    expense_nature: form.get('expense_nature'),
+  };
+  try {
+    const result = await api('/api/warehouse/consume', { method: 'POST', body: JSON.stringify(payload) });
+    closeModal('consumeModal');
+    toast(`تم خصم ${nf.format(payload.quantity_used)} وإنشاء مصروف بقيمة ${usd(result.expense.total_amount_usd)}.`);
+    await loadWarehouse();
+    await loadExpenses();
+    await refreshDashboard();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function openItemModal(id) {
+  const item = state.warehouse.find((row) => row.id === Number(id));
+  if (!item) return;
+  const form = $('#itemForm');
+  form.reset();
+  form.item_id.value = item.id;
+  form.product_name.value = item.product_name;
+  form.pharmacy_name.value = item.pharmacy_name;
+  form.purchase_date.value = item.purchase_date;
+  form.unit.value = item.unit;
+  form.initial_quantity.value = item.initial_quantity;
+  form.remaining_quantity.value = item.remaining_quantity;
+  form.currency.value = item.currency;
+  form.unit_price.value = item.currency === 'USD' ? item.unit_price_usd : item.unit_price_syp;
+  form.exchange_rate.value = item.exchange_rate || '';
+  toggleRateField('itemCurrency', 'itemRate');
+  openModal('itemModal');
+}
+
+async function handleItemSubmit(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const id = form.get('item_id');
+  const payload = {
+    product_name: form.get('product_name'),
+    pharmacy_name: form.get('pharmacy_name'),
+    purchase_date: form.get('purchase_date'),
+    unit: form.get('unit'),
+    initial_quantity: Number(form.get('initial_quantity')),
+    remaining_quantity: Number(form.get('remaining_quantity')),
+    currency: form.get('currency'),
+    unit_price: Number(form.get('unit_price')),
+    exchange_rate: form.get('exchange_rate') ? Number(form.get('exchange_rate')) : 0,
+  };
+  try {
+    await api('/api/warehouse/items/' + id, { method: 'PUT', body: JSON.stringify(payload) });
+    closeModal('itemModal');
+    toast('تم تحديث بيانات الغرض.');
+    await loadWarehouse();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+/* =========================================================================
+   Pharmacy audit
+   ========================================================================= */
+async function loadPharmaciesAudit() {
+  try {
+    const params = new URLSearchParams();
+    const pharmacy = $('#auditPharmacy')?.value?.trim();
+    if (pharmacy) params.set('pharmacy_name', pharmacy);
+    if ($('#auditStart')?.value) params.set('start_date', $('#auditStart').value);
+    if ($('#auditEnd')?.value) params.set('end_date', $('#auditEnd').value);
+    if ($('#auditProject')?.value) params.set('project_id', $('#auditProject').value);
+    const data = await api('/api/warehouse/pharmacies-audit?' + params.toString());
+    renderPharmaciesAudit(data);
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function renderPharmaciesAudit(data) {
+  const totals = data.totals || {};
+  $('#pharmacyTotals').innerHTML = `
+    <div class="card p-4"><div class="text-[10px] font-bold text-slate-400">عدد الصيدليات</div><div class="text-xl font-extrabold text-slate-800">${totals.pharmacies_count || 0}</div><div class="text-[10px] text-slate-400">${totals.items_count || 0} غرض</div></div>
+    <div class="card p-4"><div class="text-[10px] font-bold text-slate-400">إجمالي المشتريات USD</div><div class="text-xl font-extrabold text-emerald-700">${usd(totals.purchased_usd)}</div><div class="text-[10px] text-slate-400">${syp(totals.purchased_syp)}</div></div>
+    <div class="card p-4"><div class="text-[10px] font-bold text-slate-400">قيمة المسحوب/المستهلك</div><div class="text-xl font-extrabold text-amber-700">${usd(totals.consumed_usd)}</div><div class="text-[10px] text-slate-400">${syp(totals.consumed_syp)}</div></div>`;
+
+  const list = $('#pharmacyAuditList');
+  if (!data.pharmacies?.length) {
+    list.innerHTML = '<div class="card p-8 text-center text-xs text-slate-400">لا توجد حركات شراء مطابقة للفلاتر.</div>';
+    return;
+  }
+  list.innerHTML = data.pharmacies.map((pharmacy) => `
+    <div class="card p-5">
+      <div class="flex flex-wrap items-center justify-between gap-2 mb-4">
+        <div>
+          <h4 class="font-extrabold text-slate-900">🏥 ${esc(pharmacy.pharmacy_name)}</h4>
+          <p class="text-[10px] text-slate-400 mt-0.5">${pharmacy.items_count} غرض • مشتريات ${usd(pharmacy.total_purchased_usd)} / ${syp(pharmacy.total_purchased_syp)}</p>
+        </div>
+        <div class="flex gap-2">
+          <span class="chip !bg-emerald-50 !text-emerald-800">مسحوب: ${usd(pharmacy.total_consumed_usd)}</span>
+          <span class="chip">${syp(pharmacy.total_consumed_syp)}</span>
+        </div>
+      </div>
+      <div class="space-y-3">
+        ${pharmacy.items.map((item) => `
+          <div class="rounded-xl border border-slate-100 p-3">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <span class="font-bold text-sm text-slate-800">${esc(item.product_name)}</span>
+                <span class="text-[10px] text-slate-400 mr-2">${item.purchase_date} • ${esc(item.unit)}</span>
+              </div>
+              <div class="flex gap-2 text-[10px]">
+                <span class="chip">ابتدائي ${nf.format(item.initial_quantity)}</span>
+                <span class="chip !bg-amber-50 !text-amber-800">متبقي ${nf.format(item.remaining_quantity)}</span>
+                <span class="chip">${usd(item.total_cost_usd)}</span>
+              </div>
+            </div>
+            ${item.consumptions.length ? `
+            <div class="table-wrap mt-2">
+              <table>
+                <thead><tr><th>التاريخ</th><th>المشروع</th><th>الكمية</th><th>USD</th><th>SYP</th></tr></thead>
+                <tbody>${item.consumptions.map((consume) => `<tr>
+                  <td>${consume.date}</td><td>${esc(consume.project_name || '—')}</td>
+                  <td>${nf.format(consume.quantity_used)} ${esc(item.unit)}</td>
+                  <td>${usd(consume.total_usd)}</td><td>${syp(consume.total_syp)}</td>
+                </tr>`).join('')}</tbody>
+              </table>
+            </div>` : '<p class="text-[10px] text-slate-400 mt-2">لم يُستهلك من هذا الغرض بعد.</p>'}
+          </div>`).join('')}
+      </div>
+    </div>`).join('');
+}
+
+/* =========================================================================
+   Expenses
+   ========================================================================= */
+async function loadExpenses() {
+  try {
+    const params = new URLSearchParams();
+    if ($('#expenseFilterProject')?.value) params.set('project_id', $('#expenseFilterProject').value);
+    if ($('#expenseFilterNature')?.value) params.set('expense_nature', $('#expenseFilterNature').value);
+    if ($('#expenseFilterCategory')?.value) params.set('category', $('#expenseFilterCategory').value);
+    if ($('#expenseFilterStart')?.value) params.set('start_date', $('#expenseFilterStart').value);
+    if ($('#expenseFilterEnd')?.value) params.set('end_date', $('#expenseFilterEnd').value);
+    state.expenses = await api('/api/expenses?' + params.toString());
+    renderExpenses();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+const CATEGORY_LABELS = {
+  POLYSTYRENE: 'فلين', VEHICLE_FUEL: 'بنزين/سيارة', PESTICIDE: 'أدوية',
+  FERTILIZER: 'أسمدة', SETUP: 'تجهيز', OTHER: 'أخرى',
+};
+const NATURE_LABELS = { SEASONAL: 'موسمي', DAILY: 'يومي' };
+
+function renderExpenses() {
+  const body = $('#expensesTable');
+  if (!body) return;
+  if (!state.expenses.length) {
+    body.innerHTML = '<tr><td colspan="10" class="text-center text-slate-400 py-6 text-xs">لا توجد مصاريف مطابقة.</td></tr>';
+    return;
+  }
+  body.innerHTML = state.expenses.map((expense) => `<tr>
+    <td class="text-slate-500">${expense.date}</td>
+    <td class="font-bold text-slate-700">${esc(projectName(expense.project_id))}</td>
+    <td><span class="badge ${expense.expense_nature === 'SEASONAL' ? 'bg-indigo-100 text-indigo-700' : 'bg-slate-100 text-slate-600'}">${NATURE_LABELS[expense.expense_nature] || expense.expense_nature}</span></td>
+    <td><span class="chip">${CATEGORY_LABELS[expense.category] || expense.category}</span></td>
+    <td>
+      <div class="font-bold text-slate-800">${esc(expense.item_name)}</div>
+      ${expense.pharmacy_name ? `<div class="text-[10px] text-slate-400">${esc(expense.pharmacy_name)}${expense.warehouse_item_id ? ' • من المستودع' : ''}</div>` : ''}
+    </td>
+    <td>${nf.format(expense.quantity_used)}</td>
+    <td class="font-bold text-slate-700">${usd(expense.total_amount_usd)}</td>
+    <td class="text-slate-500">${syp(expense.total_amount_syp)}</td>
+    <td>${expense.enters_sharecropper_calc ? `<span class="badge bg-amber-100 text-amber-800">${usd(expense.sharecropper_deduction_usd)}</span>` : '<span class="text-[10px] text-slate-300">—</span>'}</td>
+    <td><div class="flex gap-1">
+      <button class="btn btn-soft btn-sm" onclick="editExpense(${expense.id})">تعديل</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteExpense(${expense.id})">حذف</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function resetExpenseForm() {
+  const form = $('#expenseForm');
+  form.reset();
+  form.expense_id.value = '';
+  form.date.value = today();
+  form.quantity_used.value = 1;
+  form.currency.value = 'SYP';
+  form.expense_nature.value = 'DAILY';
+  form.category.value = 'PESTICIDE';
+  state.editing.expense = null;
+  $('#expenseFormTitle').textContent = 'تسجيل مصروف';
+  $('#expenseSubmitBtn').textContent = 'إضافة المصروف';
+  $('#cancelExpenseEdit').classList.add('hidden');
+  toggleRateField('expenseCurrency', 'expenseRate');
+}
+
+function editExpense(id) {
+  const expense = state.expenses.find((row) => row.id === Number(id));
+  if (!expense) return;
+  const form = $('#expenseForm');
+  state.editing.expense = expense.id;
+  form.expense_id.value = expense.id;
+  form.project_id.value = expense.project_id;
+  form.date.value = expense.date;
+  form.expense_nature.value = expense.expense_nature;
+  form.category.value = expense.category;
+  form.item_name.value = expense.item_name;
+  form.pharmacy_name.value = expense.pharmacy_name || '';
+  form.quantity_used.value = expense.quantity_used;
+  form.unit_price.value = expense.unit_price;
+  form.currency.value = expense.currency;
+  form.exchange_rate.value = expense.exchange_rate || '';
+  form.enters_sharecropper_calc.checked = expense.enters_sharecropper_calc;
+  form.custom_sharecropper_pct.value = expense.custom_sharecropper_pct ?? '';
+  $('#expenseFormTitle').textContent = 'تعديل المصروف';
+  $('#expenseSubmitBtn').textContent = 'حفظ التعديلات';
+  $('#cancelExpenseEdit').classList.remove('hidden');
+  toggleRateField('expenseCurrency', 'expenseRate');
+  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function handleExpenseSubmit(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const id = form.get('expense_id');
+  const payload = {
+    project_id: Number(form.get('project_id')),
+    date: form.get('date'),
+    expense_nature: form.get('expense_nature'),
+    category: form.get('category'),
+    item_name: form.get('item_name'),
+    pharmacy_name: form.get('pharmacy_name') || null,
+    quantity_used: Number(form.get('quantity_used')),
+    unit_price: Number(form.get('unit_price')),
+    currency: form.get('currency'),
+    exchange_rate: form.get('exchange_rate') ? Number(form.get('exchange_rate')) : null,
+    enters_sharecropper_calc: form.get('enters_sharecropper_calc') === 'on',
+    custom_sharecropper_pct: form.get('custom_sharecropper_pct') ? Number(form.get('custom_sharecropper_pct')) : null,
+  };
+  try {
+    await api(id ? '/api/expenses/' + id : '/api/expenses', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(payload),
+    });
+    toast(id ? 'تم تعديل المصروف وإعادة الحساب.' : 'تم تسجيل المصروف.');
+    resetExpenseForm();
+    await loadExpenses();
+    await refreshDashboard();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+async function deleteExpense(id) {
+  if (!confirm('حذف هذا المصروف؟ إذا كان مرتبطاً بسحب من المستودع ستعود الكمية تلقائياً.')) return;
+  try {
+    await api('/api/expenses/' + id, { method: 'DELETE' });
+    toast('تم حذف المصروف.');
+    await loadExpenses();
+    await loadWarehouse();
+    await refreshDashboard();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function autoSharecropperForCategory() {
+  const category = $('#expenseCategory').value;
+  const checkbox = $('#expenseEnters');
+  if (category === 'POLYSTYRENE' || category === 'VEHICLE_FUEL') checkbox.checked = true;
+  else if (!state.editing.expense) checkbox.checked = false;
+}
+
+function syncExpenseSharecropper() { /* sharecropper percentages are computed server-side */ }
+
+function resetExpenseFilters() {
+  ['#expenseFilterProject', '#expenseFilterNature', '#expenseFilterCategory', '#expenseFilterStart', '#expenseFilterEnd'].forEach((selector) => setValue(selector, ''));
+  loadExpenses();
+}
+
+/* =========================================================================
+   Invoices
+   ========================================================================= */
+function blankInvoiceItem() {
+  return { crop_name: '', box_count: 0, gross_weight: 0, net_weight: 0, unit_price: 0 };
+}
+
+function addInvoiceItem(item = null) {
+  state.invoiceItems.push(item ? Object.assign({}, item) : blankInvoiceItem());
+  renderInvoiceItems();
+}
+
+function removeInvoiceItem(index) {
+  state.invoiceItems.splice(index, 1);
+  if (!state.invoiceItems.length) state.invoiceItems.push(blankInvoiceItem());
+  renderInvoiceItems();
+}
+
+function renderInvoiceItems() {
+  const body = $('#invoiceItemsBody');
+  if (!body) return;
+  body.innerHTML = state.invoiceItems.map((item, index) => {
+    const subtotal = Number(item.net_weight || 0) * Number(item.unit_price || 0);
+    return `<tr class="line-item-row">
+      <td><input class="mini-input" data-index="${index}" data-field="crop_name" value="${esc(item.crop_name)}" placeholder="باذنجان" oninput="updateInvoiceItem(${index}, 'crop_name', this.value)" /></td>
+      <td><input class="mini-input" type="number" min="0" step="1" data-index="${index}" data-field="box_count" value="${item.box_count}" oninput="updateInvoiceItem(${index}, 'box_count', this.value)" /></td>
+      <td><input class="mini-input" type="number" min="0" step="0.01" data-index="${index}" data-field="gross_weight" value="${item.gross_weight}" oninput="updateInvoiceItem(${index}, 'gross_weight', this.value)" /></td>
+      <td><input class="mini-input" type="number" min="0" step="0.01" data-index="${index}" data-field="net_weight" value="${item.net_weight}" oninput="updateInvoiceItem(${index}, 'net_weight', this.value)" /></td>
+      <td><input class="mini-input" type="number" min="0" step="0.01" data-index="${index}" data-field="unit_price" value="${item.unit_price}" oninput="updateInvoiceItem(${index}, 'unit_price', this.value)" /></td>
+      <td class="font-bold text-slate-700 text-[11px] whitespace-nowrap">${nf.format(subtotal)}</td>
+      <td><button type="button" class="btn btn-danger btn-sm" onclick="removeInvoiceItem(${index})">✕</button></td>
+    </tr>`;
+  }).join('');
+}
+
+function updateInvoiceItem(index, field, value) {
+  const numeric = ['box_count', 'gross_weight', 'net_weight', 'unit_price'];
+  state.invoiceItems[index][field] = numeric.includes(field) ? Number(value || 0) : value;
+  if (field === 'net_weight' || field === 'unit_price') renderInvoiceItems();
+  calcInvoicePreview();
+}
+
+function calcInvoicePreview() {
+  const form = $('#invoiceForm');
+  if (!form) return;
+  const currency = form.currency.value;
+  const gross = state.invoiceItems.reduce((sum, item) => sum + Number(item.net_weight || 0) * Number(item.unit_price || 0), 0);
+  const commission = Number(form.commission_amount.value || 0);
+  const poly = Number(form.polystyrene_expense.value || 0);
+  const fuel = Number(form.vehicle_fuel_expense.value || 0);
+  const other = Number(form.other_deductions.value || 0);
+  const afterCommission = gross - commission - other;
+  const netTotal = afterCommission - poly - fuel;
+
+  const project = projectById(form.project_id.value);
+  const profitPct = project?.has_sharecropper ? Number(project.sharecropper_profit_pct || 0) : 0;
+  const expensePct = project?.has_sharecropper ? Number(project.sharecropper_expense_pct || 0) : 0;
+  const shareGross = afterCommission * profitPct / 100;
+  const shareDeduction = (poly + fuel) * expensePct / 100;
+  const shareNet = shareGross - shareDeduction;
+  const ownerProfit = netTotal - shareNet;
+
+  const moneyText = (value) => currency === 'USD' ? usd(value) : syp(value);
+  $('#invoicePreview').innerHTML = `
+    <div class="rounded-xl bg-slate-50 p-3"><div class="text-[9px] text-slate-400 font-bold">إجمالي القائم</div><div class="font-extrabold text-slate-800 text-sm mt-1">${moneyText(gross)}</div></div>
+    <div class="rounded-xl bg-slate-50 p-3"><div class="text-[9px] text-slate-400 font-bold">صافي الفاتورة</div><div class="font-extrabold text-slate-800 text-sm mt-1">${moneyText(netTotal)}</div></div>
+    <div class="rounded-xl bg-amber-50 p-3"><div class="text-[9px] text-amber-600 font-bold">صافي الشغّيل (${profitPct}%)</div><div class="font-extrabold text-amber-800 text-sm mt-1">${moneyText(shareNet)}</div><div class="text-[9px] text-amber-500 mt-0.5">بعد خصم ${moneyText(shareDeduction)}</div></div>
+    <div class="rounded-xl ${ownerProfit >= 0 ? 'bg-emerald-50' : 'bg-red-50'} p-3"><div class="text-[9px] ${ownerProfit >= 0 ? 'text-emerald-600' : 'text-red-500'} font-bold">ربح المالك</div><div class="font-extrabold ${ownerProfit >= 0 ? 'text-emerald-800' : 'text-red-700'} text-sm mt-1">${moneyText(ownerProfit)}</div></div>`;
+}
+
+async function handleInvoiceSubmit(event) {
+  event.preventDefault();
+  const form = new FormData(event.target);
+  const id = form.get('invoice_id');
+  const items = state.invoiceItems
+    .filter((item) => item.crop_name && Number(item.net_weight) >= 0)
+    .map((item) => ({
+      crop_name: item.crop_name,
+      box_count: Number(item.box_count || 0),
+      gross_weight: Number(item.gross_weight || 0),
+      net_weight: Number(item.net_weight || 0),
+      unit_price: Number(item.unit_price || 0),
+    }));
+  if (!items.length) { toast('أضف صنفاً واحداً على الأقل للفاتورة.', 'error'); return; }
+
+  const payload = {
+    project_id: Number(form.get('project_id')),
+    date: form.get('date'),
+    currency: form.get('currency'),
+    exchange_rate: form.get('exchange_rate') ? Number(form.get('exchange_rate')) : null,
+    commission_amount: Number(form.get('commission_amount') || 0),
+    polystyrene_expense: Number(form.get('polystyrene_expense') || 0),
+    vehicle_fuel_expense: Number(form.get('vehicle_fuel_expense') || 0),
+    other_deductions: Number(form.get('other_deductions') || 0),
+    items,
+  };
+  try {
+    await api(id ? '/api/invoices/' + id : '/api/invoices', {
+      method: id ? 'PUT' : 'POST',
+      body: JSON.stringify(payload),
+    });
+    toast(id ? 'تم تعديل الفاتورة وإعادة الحساب.' : 'تم حفظ الفاتورة وحساب حصة الشغّيل.');
+    resetInvoiceForm();
+    await loadInvoices();
+    await refreshDashboard();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function resetInvoiceForm() {
+  const form = $('#invoiceForm');
+  form.reset();
+  form.invoice_id.value = '';
+  form.date.value = today();
+  form.commission_amount.value = 0;
+  form.polystyrene_expense.value = 0;
+  form.vehicle_fuel_expense.value = 0;
+  form.other_deductions.value = 0;
+  state.invoiceItems = [blankInvoiceItem()];
+  state.editing.invoice = null;
+  $('#invoiceFormTitle').textContent = 'فاتورة سوق خضرة جديدة';
+  $('#invoiceSubmitBtn').textContent = 'حفظ الفاتورة';
+  $('#cancelInvoiceEdit').classList.add('hidden');
+  toggleRateField('invoiceCurrency', 'invoiceRate');
+  renderInvoiceItems();
+  calcInvoicePreview();
+}
+
+async function loadInvoices() {
+  try {
+    const params = new URLSearchParams();
+    if ($('#invoiceFilterProject')?.value) params.set('project_id', $('#invoiceFilterProject').value);
+    if ($('#invoiceFilterCrop')?.value?.trim()) params.set('crop_name', $('#invoiceFilterCrop').value.trim());
+    if ($('#invoiceFilterStart')?.value) params.set('start_date', $('#invoiceFilterStart').value);
+    if ($('#invoiceFilterEnd')?.value) params.set('end_date', $('#invoiceFilterEnd').value);
+    state.invoices = await api('/api/invoices?' + params.toString());
+    renderInvoices();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+function renderInvoices() {
+  const body = $('#invoicesTable');
+  if (!body) return;
+  if (!state.invoices.length) {
+    body.innerHTML = '<tr><td colspan="8" class="text-center text-slate-400 py-6 text-xs">لا توجد فواتير مطابقة.</td></tr>';
+    return;
+  }
+  body.innerHTML = state.invoices.map((invoice) => `<tr>
+    <td class="text-slate-500">${invoice.date}</td>
+    <td class="font-bold text-slate-700">${esc(projectName(invoice.project_id))}</td>
+    <td><div class="flex flex-wrap gap-1">${invoice.items.map((item) => `<span class="chip">${esc(item.crop_name)} • ${nf.format(item.net_weight)}كغ</span>`).join('')}</div></td>
+    <td>${nf.format(invoice.total_gross)}</td>
+    <td class="font-bold text-slate-800">${nf.format(invoice.net_total)}</td>
+    <td class="text-amber-700">${nf.format(invoice.sharecropper_net_payout_syp)}</td>
+    <td class="font-bold ${invoice.owner_net_profit_usd >= 0 ? 'text-emerald-700' : 'text-red-600'}">${usd(invoice.owner_net_profit_usd)}</td>
+    <td><div class="flex gap-1">
+      <button class="btn btn-soft btn-sm" onclick="editInvoice(${invoice.id})">تعديل</button>
+      <button class="btn btn-danger btn-sm" onclick="deleteInvoice(${invoice.id})">حذف</button>
+    </div></td>
+  </tr>`).join('');
+}
+
+function editInvoice(id) {
+  const invoice = state.invoices.find((row) => row.id === Number(id));
+  if (!invoice) return;
+  const form = $('#invoiceForm');
+  state.editing.invoice = invoice.id;
+  form.invoice_id.value = invoice.id;
+  form.project_id.value = invoice.project_id;
+  form.date.value = invoice.date;
+  form.currency.value = invoice.currency;
+  form.exchange_rate.value = invoice.exchange_rate || '';
+  form.commission_amount.value = invoice.commission_amount;
+  form.polystyrene_expense.value = invoice.polystyrene_expense;
+  form.vehicle_fuel_expense.value = invoice.vehicle_fuel_expense;
+  form.other_deductions.value = invoice.other_deductions;
+  state.invoiceItems = invoice.items.map((item) => ({
+    crop_name: item.crop_name, box_count: item.box_count, gross_weight: item.gross_weight,
+    net_weight: item.net_weight, unit_price: item.unit_price,
+  }));
+  $('#invoiceFormTitle').textContent = 'تعديل الفاتورة';
+  $('#invoiceSubmitBtn').textContent = 'حفظ التعديلات';
+  $('#cancelInvoiceEdit').classList.remove('hidden');
+  toggleRateField('invoiceCurrency', 'invoiceRate');
+  renderInvoiceItems();
+  calcInvoicePreview();
+  form.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+async function deleteInvoice(id) {
+  if (!confirm('حذف هذه الفاتورة وكل أصنافها؟')) return;
+  try {
+    await api('/api/invoices/' + id, { method: 'DELETE' });
+    toast('تم حذف الفاتورة.');
+    await loadInvoices();
+    await refreshDashboard();
+  } catch (error) { toast(error.message, 'error'); }
+}
+
+/* =========================================================================
+   Reports
+   ========================================================================= */
+async function loadProjectReport() {
+  const projectId = $('#reportProject').value;
+  if (!projectId) { toast('اختر مشروعاً أولاً.', 'error'); return; }
+  const container = $('#reportContent');
+  container.innerHTML = '<div class="card p-10 text-center text-sm text-slate-400">جارٍ احتساب التقرير الشامل...</div>';
+  try {
+    const report = await api('/api/reports/project/' + projectId + '/full-audit');
+    renderReport(report);
+  } catch (error) {
+    container.innerHTML = `<div class="card p-8 text-center text-sm text-red-600">${esc(error.message)}</div>`;
+  }
+}
+
+function renderReport(report) {
+  const project = report.project;
+  const net = report.net_profit;
+  const gh = report.per_greenhouse_metrics;
+  const share = report.sharecropper;
+  const expenses = report.expenses;
+  const sales = report.sales;
+
+  const categoryRows = expenses.by_category.length ? expenses.by_category.map((category) => `
+    <div class="mb-2">
+      <div class="flex items-center justify-between text-[11px] mb-1">
+        <span class="font-bold text-slate-700">${esc(category.label)}</span>
+        <span class="text-slate-500">${usd(category.total_usd)} • ${category.share_pct}%</span>
+      </div>
+      <div class="progress"><span style="width:${Math.min(100, category.share_pct)}%;background:linear-gradient(90deg,#0f766e,#14b8a6)"></span></div>
+    </div>`).join('') : '<p class="text-xs text-slate-400">لا مصاريف مسجلة.</p>';
+
+  const cropRows = sales.by_crop.length ? sales.by_crop.map((crop) => `<tr>
+    <td class="font-bold">${esc(crop.crop_name)}</td>
+    <td>${nf.format(crop.net_weight)}</td>
+    <td>${nf.format(crop.gross_weight)}</td>
+    <td>${crop.box_count}</td>
+    <td>${usd(crop.revenue_usd)}</td>
+    <td>${syp(crop.revenue_syp)}</td>
+    <td>${crop.share_pct}%</td>
+  </tr>`).join('') : '<tr><td colspan="7" class="text-center text-slate-400 text-xs py-4">لا مبيعات.</td></tr>';
+
+  const pesticideRows = expenses.pesticide_usage.length ? expenses.pesticide_usage.map((usage) => `<tr>
+    <td>${usage.date}</td><td class="font-bold">${esc(usage.item_name)}</td><td>${esc(usage.pharmacy_name || '—')}</td>
+    <td>${nf.format(usage.quantity_used)} ${esc(usage.unit || '')}</td><td>${usd(usage.total_usd)}</td><td>${syp(usage.total_syp)}</td>
+  </tr>`).join('') : '<tr><td colspan="6" class="text-center text-slate-400 text-xs py-4">لا عمليات رش مسجلة.</td></tr>';
+
+  const shareCard = share.enabled ? `
+    <div class="card p-5">
+      <div class="flex items-center justify-between mb-4">
+        <h4 class="font-extrabold text-sm">🤝 كشف حساب الشغّيل</h4>
+        <span class="chip !bg-amber-50 !text-amber-800">${esc(share.name || 'شغّيل')} • ${share.profit_pct}% ربح / ${share.expense_pct}% مصاريف</span>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-3 gap-2 text-center">
+        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[9px] text-slate-400 font-bold">حصته من المبيعات</div><div class="font-extrabold text-slate-800 text-sm mt-1">${usd(share.gross_share_usd)}</div><div class="text-[9px] text-slate-400">${syp(share.gross_share_syp)}</div></div>
+        <div class="rounded-xl bg-amber-50 p-3"><div class="text-[9px] text-amber-600 font-bold">خصم فلين/سيارة الفواتير</div><div class="font-extrabold text-amber-800 text-sm mt-1">${usd(share.invoice_expense_deduction_usd)}</div><div class="text-[9px] text-amber-400">${syp(share.invoice_expense_deduction_syp)}</div></div>
+        <div class="rounded-xl bg-amber-50 p-3"><div class="text-[9px] text-amber-600 font-bold">خصم مصاريف منفصلة</div><div class="font-extrabold text-amber-800 text-sm mt-1">${usd(share.separate_expense_deduction_usd)}</div><div class="text-[9px] text-amber-400">${syp(share.separate_expense_deduction_syp)}</div></div>
+        <div class="rounded-xl bg-red-50 p-3"><div class="text-[9px] text-red-500 font-bold">إجمالي الخصومات</div><div class="font-extrabold text-red-700 text-sm mt-1">${usd(share.total_deductions_usd)}</div><div class="text-[9px] text-red-400">${syp(share.total_deductions_syp)}</div></div>
+        <div class="rounded-xl bg-emerald-50 p-3 md:col-span-2"><div class="text-[9px] text-emerald-600 font-bold">الصافي النهائي المستحق للشغّيل</div><div class="font-extrabold text-emerald-800 text-lg mt-1">${usd(share.net_payout_usd)}</div><div class="text-[10px] text-emerald-600">${syp(share.net_payout_syp)}</div></div>
+      </div>
+    </div>` : '';
+
+  $('#reportContent').innerHTML = `
+    <div class="card p-5">
+      <div class="flex flex-wrap items-start justify-between gap-3">
+        <div>
+          <div class="flex items-center gap-2">
+            <h3 class="font-extrabold text-xl text-slate-900">${esc(project.name)}</h3>
+            <span class="badge ${project.is_active ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-100 text-slate-500'}">${project.is_active ? 'موسم نشط' : 'موسم مغلق'}</span>
+          </div>
+          <div class="flex flex-wrap gap-1.5 mt-2">
+            <span class="chip">🏠 ${project.greenhouse_count} بيت بلاستيكي</span>
+            <span class="chip">🌱 ${esc(project.crops_planted || 'غير محدد')}</span>
+            <span class="chip">📅 ${project.season_start_date}${project.season_end_date ? ' ← ' + project.season_end_date : ' — مستمر'}</span>
+          </div>
+        </div>
+        <div class="text-left">
+          <div class="text-[10px] text-slate-400">صافي ربح المالك</div>
+          <div class="text-2xl font-extrabold ${net.owner_net_profit_usd >= 0 ? 'text-emerald-700' : 'text-red-600'}">${usd(net.owner_net_profit_usd)}</div>
+          <div class="text-[11px] text-slate-400">${syp(net.owner_net_profit_syp)} • هامش ${net.margin_pct}%</div>
+        </div>
+      </div>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-2 mt-5">
+        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[9px] text-slate-400 font-bold">مبيعات صافية</div><div class="font-extrabold text-slate-800 text-sm mt-1">${usd(net.sales_net_usd)}</div><div class="text-[9px] text-slate-400">${syp(net.sales_net_syp)}</div></div>
+        <div class="rounded-xl bg-amber-50 p-3"><div class="text-[9px] text-amber-600 font-bold">مصاريف كلية</div><div class="font-extrabold text-amber-800 text-sm mt-1">${usd(net.expenses_usd)}</div><div class="text-[9px] text-amber-400">${syp(net.expenses_syp)}</div></div>
+        <div class="rounded-xl bg-teal-50 p-3"><div class="text-[9px] text-teal-600 font-bold">مستحقات الشغّيل</div><div class="font-extrabold text-teal-800 text-sm mt-1">${usd(net.sharecropper_payout_usd)}</div><div class="text-[9px] text-teal-400">${syp(net.sharecropper_payout_syp)}</div></div>
+        <div class="rounded-xl bg-emerald-50 p-3"><div class="text-[9px] text-emerald-600 font-bold">ربح البيت الواحد</div><div class="font-extrabold text-emerald-800 text-sm mt-1">${usd(gh.net_profit_usd)}</div><div class="text-[9px] text-emerald-400">${syp(gh.net_profit_syp)}</div></div>
+      </div>
+    </div>
+
+    ${shareCard}
+
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-4">
+      <div class="card p-5">
+        <h4 class="font-extrabold text-sm mb-3">🏠 مؤشرات البيت البلاستيكي الواحد</h4>
+        <div class="space-y-2 text-xs">
+          <div class="flex items-center justify-between rounded-xl bg-amber-50 p-3"><span class="text-amber-700">تكلفة البيت</span><b class="text-amber-900">${usd(gh.cost_usd)}</b></div>
+          <div class="flex items-center justify-between rounded-xl bg-slate-50 p-3"><span class="text-slate-500">مبيعات البيت</span><b class="text-slate-800">${usd(gh.revenue_usd)}</b></div>
+          <div class="flex items-center justify-between rounded-xl bg-emerald-50 p-3"><span class="text-emerald-700">ربح البيت</span><b class="text-emerald-900">${usd(gh.net_profit_usd)}</b></div>
+          <div class="text-[10px] text-slate-400 text-center pt-1">محسوبة على ${gh.greenhouse_count} بيت • ${syp(gh.cost_syp)} / ${syp(gh.revenue_syp)} / ${syp(gh.net_profit_syp)}</div>
+        </div>
+      </div>
+      <div class="card p-5 xl:col-span-2">
+        <h4 class="font-extrabold text-sm mb-3">💸 أين ذهبت أموال المشروع؟</h4>
+        <div class="grid grid-cols-2 gap-2 mb-4">
+          <div class="rounded-xl bg-indigo-50 p-3"><div class="text-[9px] text-indigo-600 font-bold">مصاريف موسمية</div><div class="font-extrabold text-indigo-800 text-sm mt-1">${usd(expenses.seasonal_usd)}</div><div class="text-[9px] text-indigo-400">${syp(expenses.seasonal_syp)}</div></div>
+          <div class="rounded-xl bg-slate-50 p-3"><div class="text-[9px] text-slate-500 font-bold">مصاريف يومية</div><div class="font-extrabold text-slate-800 text-sm mt-1">${usd(expenses.daily_usd)}</div><div class="text-[9px] text-slate-400">${syp(expenses.daily_syp)}</div></div>
+        </div>
+        ${categoryRows}
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div class="card p-5">
+        <h4 class="font-extrabold text-sm mb-3">🥬 تفصيل المبيعات والمحاصيل</h4>
+        <div class="grid grid-cols-2 gap-2 mb-3 text-[10px]">
+          <span class="chip">صافي البيع: ${usd(sales.net_sales_usd)}</span>
+          <span class="chip">الوزن الصافي: ${nf.format(sales.net_weight)} كغ</span>
+          <span class="chip">الفلين: ${sales.box_count} عبوة</span>
+          <span class="chip">الكوميسيون: ${syp(sales.commission_syp)}</span>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>المحصول</th><th>صافي كغ</th><th>قائم كغ</th><th>عبوات</th><th>USD</th><th>SYP</th><th>%</th></tr></thead>
+            <tbody>${cropRows}</tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card p-5">
+        <h4 class="font-extrabold text-sm mb-3">🧪 سجل الأدوية المرشوشة</h4>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>التاريخ</th><th>الدواء</th><th>الصيدلية</th><th>الكمية</th><th>USD</th><th>SYP</th></tr></thead>
+            <tbody>${pesticideRows}</tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <div class="card p-5">
+      <h4 class="font-extrabold text-sm mb-3">🧮 معادلة الربح النهائي</h4>
+      <div class="grid grid-cols-1 md:grid-cols-4 gap-2 text-center text-xs">
+        <div class="rounded-xl bg-slate-50 p-3"><div class="text-[9px] text-slate-400">صافي المبيعات</div><div class="font-bold mt-1">${usd(net.sales_net_usd)}</div></div>
+        <div class="rounded-xl bg-red-50 p-3"><div class="text-[9px] text-red-400">− المصاريف</div><div class="font-bold text-red-700 mt-1">${usd(net.expenses_usd)}</div></div>
+        <div class="rounded-xl bg-amber-50 p-3"><div class="text-[9px] text-amber-500">− حصة الشغّيل</div><div class="font-bold text-amber-800 mt-1">${usd(net.sharecropper_payout_usd)}</div></div>
+        <div class="rounded-xl bg-emerald-50 p-3"><div class="text-[9px] text-emerald-600">= صافي ربح المالك</div><div class="font-extrabold text-emerald-800 mt-1">${usd(net.owner_net_profit_usd)}</div></div>
+      </div>
+    </div>`;
+}
+
+async function runHeavyExport() {
+  const status = $('#heavyExportStatus');
+  status.classList.remove('hidden');
+  status.textContent = 'جارٍ إرسال المهمة إلى عامل Celery...';
+  try {
+    const result = await api('/api/reports/heavy-export', { method: 'POST' });
+    status.textContent = `تم إرسال المهمة. رقم المهمة: ${result.task_id} — الحالة: ${result.status}`;
+    toast('تم إرسال الجرد الشامل إلى الخلفية.');
+  } catch (error) {
+    status.textContent = error.message;
+    toast(error.message, 'error');
+  }
+}
+
+/* =========================================================================
+   Boot
+   ========================================================================= */
+function bindEvents() {
+  $('#loginForm').addEventListener('submit', handleLogin);
+  $('#registerForm').addEventListener('submit', handleRegister);
+  $('#projectForm').addEventListener('submit', handleProjectSubmit);
+  $('#warehouseForm').addEventListener('submit', handleWarehouseSubmit);
+  $('#consumeForm').addEventListener('submit', handleConsumeSubmit);
+  $('#itemForm').addEventListener('submit', handleItemSubmit);
+  $('#expenseForm').addEventListener('submit', handleExpenseSubmit);
+  $('#invoiceForm').addEventListener('submit', handleInvoiceSubmit);
+  $$('[data-view]').forEach((button) => button.addEventListener('click', () => switchView(button.dataset.view)));
+  $$('.modal-backdrop').forEach((backdrop) => {
+    backdrop.addEventListener('click', (event) => {
+      if (event.target === backdrop) backdrop.classList.add('hidden');
+    });
+  });
+  document.addEventListener('keydown', (event) => {
+    if (event.key === 'Escape') $$('.modal-backdrop').forEach((backdrop) => backdrop.classList.add('hidden'));
+  });
+}
+
+async function init() {
+  bindEvents();
+  const defaults = [
+    ['#warehouseForm [name=purchase_date]'], ['#consumeForm [name=date]'],
+    ['#expenseForm [name=date]'], ['#invoiceForm [name=date]'],
+  ];
+  defaults.forEach(([selector]) => { const el = $(selector); if (el) el.value = today(); });
+  toggleRateField('warehouseCurrency', 'warehouseRate');
+  toggleRateField('expenseCurrency', 'expenseRate');
+  toggleRateField('invoiceCurrency', 'invoiceRate');
+  state.invoiceItems = [blankInvoiceItem()];
+  renderInvoiceItems();
+  calcInvoicePreview();
+
+  if (state.token) {
+    try {
+      state.user = await api('/api/me');
+      showApp();
+      await loadAll();
+    } catch (error) {
+      logout();
+    }
+  }
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>
